@@ -1,8 +1,7 @@
 
-#include "whatsappClient.h"
 #include "whatsappio.h"
 
-// Todo: check sucess, listed for EXIT,
+
 
 //// ============================   Constants =====================================================
 
@@ -16,7 +15,7 @@
 //// ============================  Forward Declarations ===========================================
 
 
-//// ============================== Core Functions ================================================
+//// ============================== Main Function ================================================
 
 int main(int argc, char *argv[])
 {
@@ -24,11 +23,13 @@ int main(int argc, char *argv[])
 
     //// connect to specified port
     //// wait for client
+
     //// --- Setup  ---
     //// --- Setup  ---
     //// --- Setup  ---
     //// --- Setup  ---
 }
+
 
 //// ==============================  Helper Functions =============================================
 

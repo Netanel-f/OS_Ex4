@@ -3,5 +3,12 @@ project(OS_Ex4)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(SOURCE_FILES main.cpp)
-add_executable(OS_Ex4 ${SOURCE_FILES})
+set(CLIENT whatsappClient.cpp)
+set(SERVER whatsappServer.cpp)
+set(IO whatsappio.cpp whatsappio.h)
+
+set(SERVER_SRC ${SERVER} ${IO})
+add_executable(whatsappServer ${SERVER_SRC})
+
+set(CLIENT_SRC ${CLIENT} ${IO})
+add_executable(whatsappClient ${CLIENT_SRC})
