@@ -8,7 +8,7 @@
 // Todo: check sucess, listed for EXIT,
 
 //// ============================   Constants =====================================================
-static const int MAX_CONCURRENT_CLIENTS = 10;
+static const int MAX_QUEUE = 10;
 
 //// ===========================   Typedefs & Structs =============================================
 
@@ -57,6 +57,39 @@ int main(int argc, char *argv[])
 }
 //// ===============================  Helper Functions ============================================
 
+void init(){
+        //todo
+};
+
+void registerClient(){
+        //todo
+};
+
+bool isClient(){
+    //todo
+};
+
+void handleRequest(){
+        const std::string command = NULL; //todo
+        command_type type;
+        std::string name;
+        std::string message;
+        std::vector<std::string> clients;
+        parse_command(command, type, name, message, clients);
+        switch (type)
+        { //todo
+            case CREATE_GROUP:
+            break;
+            case SEND:
+                break;
+            case WHO:
+                break;
+            case EXIT:
+                break;
+            case INVALID:
+                break;
+        }
+};
 
 //// ===============================  Error Function ==============================================
 

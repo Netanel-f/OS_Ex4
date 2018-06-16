@@ -22,7 +22,8 @@ int main(int argc, char *argv[])
     //// --- Setup  ---
 
     //// connect to specified port
-    //// wait for client
+    //// (Bind to server?)
+    //// wait for Server
 
     //// --- Setup  ---
     //// --- Setup  ---
