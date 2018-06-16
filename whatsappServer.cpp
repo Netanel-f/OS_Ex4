@@ -19,6 +19,12 @@ struct Client
     int sockfd;
 };
 
+struct Context
+{
+    std::string name;
+    int sockfd;
+};
+
 
 //// ===========================   Global Variables ===============================================
 //todo J there should probably be none for thread safety
@@ -61,11 +67,15 @@ void init(){
         //todo
 };
 
-void registerClient(){
+void establish(unsigned short portnum){
+    //todo
+};
+
+void registerClient(std::string& name, void* clientRegistry){
         //todo
 };
 
-bool isClient(){
+bool isClient(std::string& name, void* clientRegistry){
     //todo
 };
 
