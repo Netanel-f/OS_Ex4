@@ -69,7 +69,6 @@ class Server{
  public:
 
     //// C-tor
-    Server() = default; //todo J do we need this?
     explicit void Server(unsigned short portNumber);
 
     //// server actions
@@ -96,8 +95,6 @@ class Server{
     bool isLegalClientName(std::string &name);
     bool isLegalGroupName(std::string &name);
     bool isAlNumString(std::string &str);
-
-
 
 };
 
@@ -143,8 +140,8 @@ void Server::Server(unsigned short portNumber) {
     // todo initialise fields
     strcpy(serverName,srvName);
     serverPort = portNumber;
-
 }
+
 
 void Server::selectPhase() {
     fd_set clientsfds;
@@ -338,6 +335,7 @@ void Server::who(Command c) {
 
     // todo send list to printing
     print_who_client(); //todo print
+
 
 }
 
