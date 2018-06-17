@@ -37,21 +37,21 @@ int main(int argc, char *argv[])
     //// --- Setup  ---
     Client clientData;
     setupClient(&clientData, argv);
+
     //// connect to specified port
     //// (Bind to server?)
     //// wait for Server
 
     //// --- Setup  ---
-    //// --- Setup  ---
-    //// --- Setup  ---
-    //// --- Setup  ---
+
 }
 
 
 void setupClient(struct Client * clientData, char * mainArgs[]){
     std::string clientName = std::string(mainArgs[1]);
 
-    if (std::any_of(clientName.begin(), clientName.end(), !std::isalnum)) {
+    if (clientName.length() > WA_MAX_NAME ||
+            std::any_of(clientName.begin(), clientName.end(), !std::isalnum)) {
         printf("Usage: whatsappServer clientName serverAddress serverPort\n");
         exit(1);
     }
@@ -80,11 +80,12 @@ void setupClient(struct Client * clientData, char * mainArgs[]){
 
     int sockfd;
     sockfd = socket(hostEnt->h_addrtype, SOCK_STREAM, 0);
-    errCheck(sockfd, "socket"); //todo
+    errCheck(sockfd, "socket"); //todo printing
 
     int retVal = connect(sockfd, (struct sockaddr*)&sa, sizeof(sa));
-    errCheck(retVal,"connect");
+    errCheck(retVal,"connect"); //todo printing
     *clientData = {clientName, sockfd};
+    //todo print connect succeeded.
 }
 
 //// ==============================  Helper Functions =============================================
