@@ -15,6 +15,7 @@
 static const int MAX_QUEUE = 10;
 static const int MAX_HOST_NAME_LEN = 30;
 static const int MAX_GROUP_NAME_LEN = 30;
+static const int FUCK = -1;
 
 
 //// ===========================   Typedefs & Structs =============================================
@@ -85,7 +86,7 @@ bool isLegalGroupName(std::string &name, serverDB *db);
 bool isAlNumString(std::string &str);
 
 //// errors
-void errCheck(int &returnVal, const std::string &funcName, int checkVal = 0);
+void errCheck(int &retVal, const std::string &funcName, int successVal = 0);
 //todo N: maybe will chaging the errcheck to just print the error.
 //todo N: errors can be -1 / 0 / nullprt
 
@@ -402,17 +403,20 @@ bool isAlNumString(std::string &str){
 
 /**
  * Checks for failure of library functions, and handling them when they occur.
+ * @param retVal
+ * @param funcName Name of function
+ * @param successVal value given for success (default is 0)
  */
-void errCheck(int &returnVal, const std::string &funcName, int checkVal = 0) {
+void errCheck(int &retVal, const std::string &funcName, int successVal = 0) {
 
     // if no failure, return
-    if (returnVal == checkVal) return;
+    if (retVal == successVal) return;
 
     // set prefix
-    print_error(funcName, returnVal); // todo J is this what is meant by error number?
+    print_error(funcName, retVal); // todo J is this what is meant by error number?
 
     // exit
-    exit(-1);
+    exit(FUCK);
 }
 //todo N: maybe will chaging the errcheck to just print the error.
 //todo N: errors can be -1 / 0 / nullprt
