@@ -20,7 +20,7 @@ static const int MAX_GROUP_NAME_LEN = 30;
 //// ===========================   Typedefs & Structs =============================================
 
 typedef std::pair<std::string, Client *> ClientPair;
-typedef std::pair<std::string, clientsGroup *> GroupPair;
+typedef std::pair<std::string, Group *> GroupPair;
 
 // client
 struct Client {
@@ -38,7 +38,7 @@ struct Command {
 };
 
 // clients Group
-struct clientsGroup {
+struct Group {
   std::string name;
   std::map<std::string, Client *> groupMembers;
 };
@@ -49,7 +49,7 @@ struct serverDB {
   int welcomeSocket;
 
   std::map<std::string, Client *> clients;
-  std::map<std::string, clientsGroup *> groups;
+  std::map<std::string, Group *> groups;
 
 };
 
@@ -58,28 +58,37 @@ struct serverDB {
 //todo J there should probably be none for thread safety
 
 //// ============================  Forward Declarations ===========================================
-bool isClient(std::string &name, serverDB *serverData);
-bool isGroup(std::string &name, serverDB *serverData);
-void registerClient(std::string &name, serverDB *serverData);
+
+//// server actions
+void setupServer(serverDB *db, unsigned short portNumber);
+void selectPhase(serverDB *serverData);
+void connectNewClient(serverDB *db);
+void serverStdInput();
+void handleClientRequest(serverDB *serverData);
+
+//// DB modify
+void registerClient(std::string &name, serverDB *db);
+
+//// DB queries
+bool isClient(std::string &name, serverDB *db);
+bool isGroup(std::string &name, serverDB *db);
+
+//// request handling
+void createGroup(Command c, serverDB *db);
+void send(Command c, serverDB *db);
+void who(Command c, serverDB *db);
+void clientExit(Command c, serverDB *db);
+
+//// name legality
+bool isLegalClientName(std::string &name, serverDB *db);
+bool isLegalGroupName(std::string &name, serverDB *db);
+bool isAlNumString(std::string &str);
+
+//// errors
+
 void errCheck(int &returnVal, const std::string &funcName, int checkVal = 0);
 //todo N: maybe will chaging the errcheck to just print the error.
 //todo N: errors can be -1 / 0 / nullprt
-
-void setupServer(serverDB *serverData, unsigned short portNumber);
-void selectPhase(serverDB *serverData);
-void connectNewClient(serverDB *serverData);
-void serverStdInput();
-void handleClientRequest();
-
-void createGroup(Command c, serverDB *serverData);
-void send(Command c, serverDB *serverData);
-void who(Command c, serverDB *serverData);
-void clientExit(Command c, serverDB *serverData);
-
-bool isLegalClientName(std::string &name, serverDB *serverData);
-bool isLegalGroupName(std::string &name, serverDB *serverData);
-bool isAlNumString(std::string &str);
-
 
 //// =============================== Main Function ================================================
 
@@ -124,8 +133,11 @@ int main(int argc, char *argv[]) {
     //todo disconnect clients clear memory and exit(0)
 }
 //// ===============================  Helper Functions ============================================
+// todo NEWWWWWWWWWWWWWWWWWWWW
 
-void setupServer(serverDB *serverData, unsigned short portNumber) {
+//// server actions
+
+void setupServer(serverDB *db, unsigned short portNumber) {
 
     char serverName[MAX_HOST_NAME_LEN + 1];
     int welcomeSocket;
@@ -153,7 +165,7 @@ void setupServer(serverDB *serverData, unsigned short portNumber) {
 
     listen(welcomeSocket, MAX_QUEUE);
 
-    *serverData = {serverName, portNumber, welcomeSocket};
+    *db = {serverName, portNumber, welcomeSocket};
 
 }
 
@@ -193,45 +205,12 @@ void selectPhase(serverDB * serverData) {
     }
 }
 
-void init() {
+void connectNewClient(serverDB *db){
     //todo
 }
 
-void establish(unsigned short portnum) {
+void serverStdInput(){
     //todo
-}
-
-void registerClient(std::string &name, serverDB *serverData) {
-    //todo
-
-    if (!isLegalClientName(name, serverData)){
-        //todo err
-    }
-}
-
-bool isClient(std::string &name, serverDB *serverData) {
-    return((bool)serverData->clients.count(name)); // (count is zero (false) if not there.
-}
-
-bool isGroup(std::string &name, serverDB *serverData){
-    return((bool)serverData->groups.count(name)); // (count is zero (false) if not there.
-}
-
-bool isLegalClientName(std::string &name, serverDB *serverData){
-    // ensure alphanumeric only and name not taken.
-    return(isAlNumString(name) && !isClient(name, serverData));
-}
-
-bool isLegalGroupName(std::string &name, serverDB *serverData){
-    // ensure alphanumeric only and name not taken.
-    return(isAlNumString(name) && !isGroup(name, serverData));
-}
-
-bool isAlNumString(std::string &str){
-    for(char c: str){
-        if(!isalnum(c)) return false;
-    }
-    return true;
 }
 
 void handleClientRequest(serverDB *serverData) {
@@ -258,15 +237,38 @@ void handleClientRequest(serverDB *serverData) {
     }
 };
 
-void createGroup(Command c, serverDB * serverData) {
+//// DB modify
+
+void registerClient(std::string &name, serverDB *db) {
+    //todo
+
+    if (!isLegalClientName(name, db)){
+        //todo err
+    }
+}
+
+//// DB queries
+
+bool isClient(std::string &name, serverDB *db) {
+    return((bool)db->clients.count(name)); // (count is zero (false) if not there.
+}
+
+bool isGroup(std::string &name, serverDB *db){
+    return((bool)db->groups.count(name)); // (count is zero (false) if not there.
+}
+
+
+//// request handling
+
+void createGroup(Command c, serverDB * db) {
 
     //// ensure group name legal & unique (not taken)
-    if(!isLegalGroupName(c.name, serverData)){
+    if(!isLegalGroupName(c.name, db)){
         //todo err
     }
 
     //// make set of clients (allowing duplicates) and ensuring all clients exists
-    clientsGroup newGroup;
+    Group newGroup;
 
     newGroup.name = c.name;
 
@@ -278,17 +280,17 @@ void createGroup(Command c, serverDB * serverData) {
 
 
             //ensure client exists in server
-            if(!isClient(strName, serverData)){
+            if(!isClient(strName, db)){
                 //todo err
             }
 
             //add it to group
-            newGroup.groupMembers.insert(ClientPair(strName, serverData->clients.at(strName)));
+            newGroup.groupMembers.insert(ClientPair(strName, db->clients.at(strName)));
         }
     }
 
     //// add caller to set even if unspecified
-    newGroup.groupMembers.insert(ClientPair(c.caller, serverData->clients.at(c.caller)));
+    newGroup.groupMembers.insert(ClientPair(c.caller, db->clients.at(c.caller)));
 
     //// ensure group has at least 2 members (including creating client)
     if(newGroup.groupMembers.size() < 2){
@@ -298,7 +300,7 @@ void createGroup(Command c, serverDB * serverData) {
     }
 
     //// add this group to DB
-    serverData->groups.emplace(GroupPair(newGroup.name, &newGroup));
+    db->groups.emplace(GroupPair(newGroup.name, &newGroup));
 
 
     /// and trigger output, both server and client
@@ -306,10 +308,10 @@ void createGroup(Command c, serverDB * serverData) {
 
 }
 
-void send(Command c, serverDB *serverData) {
+void send(Command c, serverDB *db) {
 
     //// if name in client
-    if (isClient(c.name, serverData)) {
+    if (isClient(c.name, db)) {
 
         //// ensure recipient is not sender
         if(c.name == c.caller){
@@ -320,15 +322,15 @@ void send(Command c, serverDB *serverData) {
         print_send(); // todo
     }
         //// if name in groups
-    else if(isGroup(c.name, serverData)){
+    else if(isGroup(c.name, db)){
 
         //// ensure caller is in this group
-        if(!serverData->groups->count(c.name)){
+        if(!db->groups->count(c.name)){
             //todo err
         }
 
         //// send to all in group except caller
-        for(auto const & pair : serverData->groups.at(c.name)->groupMembers){
+        for(auto const & pair : db->groups.at(c.name)->groupMembers){
             // if not caller
             if(pair.first != c.caller){
                 //todo print send
@@ -341,12 +343,12 @@ void send(Command c, serverDB *serverData) {
 
 }
 
-void who(Command c,  serverDB *serverData) {
+void who(Command c,  serverDB *db) {
     //// order and return names
     std::vector<std::string> namesVec;
 
     // get all names
-    for(auto const & pair : serverData->clients){
+    for(auto const & pair : db->clients){
         namesVec.push_back(pair.first);
     }
 
@@ -355,11 +357,30 @@ void who(Command c,  serverDB *serverData) {
 
 }
 
-void serverExit(Command c) {
-
+void clientExit(Command c, serverDB *db){
+    //todo
 }
 
-//// ===============================  Error Function ==============================================
+//// name legality
+
+bool isLegalClientName(std::string &name, serverDB *db){
+    // ensure alphanumeric only and name not taken.
+    return(isAlNumString(name) && !isClient(name, db));
+}
+
+bool isLegalGroupName(std::string &name, serverDB *db){
+    // ensure alphanumeric only and name not taken.
+    return(isAlNumString(name) && !isGroup(name, db));
+}
+
+bool isAlNumString(std::string &str){
+    for(char c: str){
+        if(!isalnum(c)) return false;
+    }
+    return true;
+}
+
+//// errors
 
 /**
  * Checks for failure of library functions, and handling them when they occur.
@@ -375,5 +396,6 @@ void errCheck(int &returnVal, const std::string &funcName, int checkVal = 0) {
     // exit
     exit(-1);
 }
-
+//todo N: maybe will chaging the errcheck to just print the error.
+//todo N: errors can be -1 / 0 / nullprt
 
