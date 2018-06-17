@@ -1,4 +1,8 @@
 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <algorithm>
 #include "whatsappio.h"
 
 
@@ -19,29 +23,20 @@ struct Client
 
 
 //// ============================  Forward Declarations ===========================================
-
+void setupClient(struct Client * clientData, char * mainArgs[]);
 
 //// ============================== Main Function ================================================
 
 int main(int argc, char *argv[])
 {
     if (argc != 4) {
-        printf("Usage: whatsappServer clientName serverAddress serverPort\n");  //todo server shouldnt crash upon receiving illegal requests?
-        exit(1);
-    }
-
-    char * clientName = argv[1];
-    char * serverAddress = argv[2];
-    int portNumber = atoi(argv[3]);
-
-    //todo validate args!
-    if (portNumber < 0 || portNumber> 65535){
         printf("Usage: whatsappServer clientName serverAddress serverPort\n");
         exit(1);
     }
 
     //// --- Setup  ---
-
+    Client clientData;
+    setupClient(&clientData, argv);
     //// connect to specified port
     //// (Bind to server?)
     //// wait for Server
@@ -52,6 +47,45 @@ int main(int argc, char *argv[])
     //// --- Setup  ---
 }
 
+
+void setupClient(struct Client * clientData, char * mainArgs[]){
+    std::string clientName = std::string(mainArgs[1]);
+
+    if (std::any_of(clientName.begin(), clientName.end(), !std::isalnum)) {
+        printf("Usage: whatsappServer clientName serverAddress serverPort\n");
+        exit(1);
+    }
+
+    int portNumber = atoi(mainArgs[3]);
+
+    //todo validate args!
+    if (portNumber < 0 || portNumber> 65535){
+        printf("Usage: whatsappServer clientName serverAddress serverPort\n");
+        exit(1);
+    }
+
+
+    struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
+    struct hostent * hostEnt;
+
+    hostEnt = gethostbyname(mainArgs[2]);
+    if (hostEnt== nullptr) {
+//        errCheck("gethostbyname");    //todo need to handle error
+    }
+
+    memset(&sa, 0,sizeof(sa));
+    memcpy(&sa.sin_addr, hostEnt->h_addr, hostEnt->h_length);
+    sa.sin_family = hostEnt->h_addrtype;
+    sa.sin_port = htons((u_short) portNumber);
+
+    int sockfd;
+    sockfd = socket(hostEnt->h_addrtype, SOCK_STREAM, 0);
+    errCheck(sockfd, "socket"); //todo
+
+    int retVal = connect(sockfd, (struct sockaddr*)&sa, sizeof(sa));
+    errCheck(retVal,"connect");
+    *clientData = {clientName, sockfd};
+}
 
 //// ==============================  Helper Functions =============================================
 
