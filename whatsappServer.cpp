@@ -133,14 +133,15 @@ void setupServer(serverDB * serverData, unsigned short portNumber) {
     struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
     struct hostent * hostEnt;
 
-    int retVal = gethostname(serverName, MAX_HOST_NAME_LEN);
-    errCheck(retVal, "gethostname");
+//    int retVal = gethostname(serverName, MAX_HOST_NAME_LEN);
+//    errCheck(retVal, "gethostname");
+    bzero(&sa,sizeof(struct sockaddr_in));
     hostEnt = gethostbyname(serverName);
     if (hostEnt== nullptr) {
 //        errCheck("gethostbyname");    //todo need to handle error
     }
 
-    memset(&sa, 0,sizeof(struct sockaddr_in));
+    memset(&sa, 0,sizeof(sa));
     sa.sin_family = AF_INET;
     memcpy(&sa.sin_addr, hostEnt->h_addr, hostEnt->h_length);
     sa.sin_port = htons(portNumber);
@@ -148,7 +149,7 @@ void setupServer(serverDB * serverData, unsigned short portNumber) {
     welcomeSocket = socket(AF_INET, SOCK_STREAM, 0);
     errCheck(welcomeSocket, "socket");
 
-    retVal = bind(welcomeSocket, (struct sockaddr*)&sa, sizeof(struct sockaddr_in));
+    int retVal = bind(welcomeSocket, (struct sockaddr*)&sa, sizeof(struct sockaddr_in));
     errCheck(retVal, "bind");
 
     listen(welcomeSocket, MAX_QUEUE);
