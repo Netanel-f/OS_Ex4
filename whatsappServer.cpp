@@ -182,9 +182,12 @@ void selectPhase(serverDB * serverData) {
     while (true) {
         readfds = clientsfds;
         retVal = select(MAX_QUEUE+2, &readfds, nullptr, nullptr, nullptr);
-        errCheck(retVal, "select");
-        //todo terminate server and return -1;
-
+        if (retVal == -1) {
+            errCheck(retVal, "select");
+            //todo terminate server and return -1;
+        }else if (retVal == 0) {
+            continue;
+        }
         //Returns a non-zero value if the bit for the file descriptor fd is set in the file descriptor set pointed to by fdset, and 0 otherwise
         if (FD_ISSET(serverData->welcomeSocket, &readfds)) {
             //will also add the client to the clientsfds
