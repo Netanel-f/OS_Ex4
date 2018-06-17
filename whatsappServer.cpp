@@ -85,7 +85,6 @@ bool isLegalGroupName(std::string &name, serverDB *db);
 bool isAlNumString(std::string &str);
 
 //// errors
-
 void errCheck(int &returnVal, const std::string &funcName, int checkVal = 0);
 //todo N: maybe will chaging the errcheck to just print the error.
 //todo N: errors can be -1 / 0 / nullprt
@@ -245,6 +244,11 @@ void registerClient(std::string &name, serverDB *db) {
     if (!isLegalClientName(name, db)){
         //todo err
     }
+    int sockfd = nullptr; //todo
+
+    Client newClient{name, sockfd}; //todo is this valid creation (scope?)
+
+    db->clients.insert(ClientPair(name, &newClient));  //todo is this valid creation (scope?)
 }
 
 //// DB queries
@@ -330,7 +334,7 @@ void send(Command c, serverDB *db) {
         }
 
         //// send to all in group except caller
-        for(auto const & pair : db->groups.at(c.name)->groupMembers){
+        for(ClientPair & pair : db->groups.at(c.name)->groupMembers){
             // if not caller
             if(pair.first != c.caller){
                 //todo print send
@@ -348,17 +352,31 @@ void who(Command c,  serverDB *db) {
     std::vector<std::string> namesVec;
 
     // get all names
-    for(auto const & pair : db->clients){
+    for(ClientPair & pair : db->clients){
         namesVec.push_back(pair.first);
     }
 
-
+    // todo send list to printing
     print_who_client(); //todo print
 
 }
 
 void clientExit(Command c, serverDB *db){
     //todo
+
+    // remove caller from all groups
+    for(GroupPair & pair : db->groups){
+
+        // remove caller from members of group (if he is there)
+        Group *group = pair.second;
+        group->groupMembers.erase(c.caller);
+    }
+
+    // remove caller from server
+    db->clients.erase(c.caller);
+
+    // todo print sucess to server and client
+    print_exit();
 }
 
 //// name legality
