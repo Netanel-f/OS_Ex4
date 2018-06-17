@@ -92,15 +92,17 @@ class Server{
     bool isLegalClientName(std::string &name);
     bool isLegalGroupName(std::string &name);
     bool isAlNumString(std::string &str);
-    
-    //// errors
-    void errCheck(int &retVal, const std::string &funcName, int successVal = 0);
-    //todo N: maybe will chaging the errcheck to just print the error.
-    //todo N: errors can be -1 / 0 / nullprt
+
+
 
 };
 
-//// ===============================  Helper Functions ============================================
+//// ===============================  Forward Declarations ============================================
+
+//// errors
+void errCheck(int &retVal, const std::string &funcName, int successVal = 0);
+
+//// ===============================  Class Server ============================================
 
 //// server actions
 
@@ -153,7 +155,7 @@ void Server::selectPhase() {
         //todo terminate server and return -1;
 
         //Returns a non-zero value if the bit for the file descriptor fd is set in the file descriptor set pointed to by fdset, and 0 otherwise
-        if (FD_ISSET(serverData->welcomeSocket, &readfds)) {
+        if (FD_ISSET(welcomeSocket, &readfds)) {
             //will also add the client to the clientsfds
             connectNewClient();
         }
@@ -180,7 +182,7 @@ void Server::serverStdInput(){
     //todo
 }
 
-void Server::handleClientRequest(serverDB *serverData) {
+void Server::handleClientRequest(){
     commandStr = NULL; //todo read
     // todo clear old command?
     parse_command(commandStr, c.type, c.name, c.message, c.clients);
@@ -368,6 +370,10 @@ bool Server::isAlNumString(std::string &str){
     return true;
 }
 
+
+//// ===============================  Helper Functions ============================================
+
+
 //// errors
 
 /**
@@ -414,7 +420,7 @@ int main(int argc, char *argv[]) {
     //// --- Setup  ---
     //// create socket
     //// bind to an ip adress and port
-    server.setupServer(portNumber);
+    server.setupServer((unsigned short)portNumber); // todo J is conversion ok?
 
     //// --- Wait  ---
     //// listen
