@@ -33,7 +33,13 @@ struct Command
 
 //// ============================  Forward Declarations ===========================================
 void setupClient(struct Client * clientData, char * mainArgs[]);
+bool validateGroupCreation(Command * command, std::string * senderName);
+bool validateSend(Command * command, std::string * senderName);
 bool isNameValid(std::string * name);
+void requestCreateGroup(Command * command, std::string * senderName);
+void requestSend(Command * command, std::string * senderName);
+void requestWho(Command * command);
+void requestExit();
 
 //// ============================== Main Function ================================================
 
@@ -99,7 +105,7 @@ void setupClient(struct Client * clientData, char * mainArgs[]){
     //todo print connect succeeded.
 }
 
-void validateGroupCreation(Command * command, std::string * senderName) {
+bool validateGroupCreation(Command * command, std::string * senderName) {
     // check if name of group is valid,
     if(isNameValid(&(command->name))) {
         if (!command->clients.empty()) {
@@ -110,31 +116,55 @@ void validateGroupCreation(Command * command, std::string * senderName) {
             }
 
             if (foundOthersUsers) {
-                //todo send request to server
-                return;
+                return true;
             }
         }
     }
 
     // if arrived here - one of the names is invalid
-    //todo handle error
+    return false;
 }
 
-void validateSend(Command * command, std::string * senderName) {
+bool validateSend(Command * command, std::string * senderName) {
     if (isNameValid(&(command->name))) {
         if (!(command->name == *senderName)) {
             //todo send request to server
-            return;
+            return true;
         }
     }
     // if arrived here - one of the names is invalid
-    //todo handle error
+    return false;
+}
+
+void requestCreateGroup(Command * command, std::string * senderName) {
+    if (validateGroupCreation(command, senderName)) {
+        //todo send request to server
+        return;
+    } else {
+        //todo handle error
+    }
+}
+
+void requestSend(Command * command, std::string * senderName) {
+    if (validateSend(command, senderName)){
+        //todo send request to server
+        return;
+    } else {
+        //todo handle error
+    }
+}
+
+void requestWho(Command * command) {
+    //todo send who request
+}
+
+void requestExit() {
+    //todo send exit request to server and clear client memort.
 }
 
 bool isNameValid(std::string * name) {
     return !(name->length() > WA_MAX_NAME ||
             std::any_of(name->begin(), name->end(), !std::isalnum));
-
 }
 
 //// ==============================  Helper Functions =============================================
