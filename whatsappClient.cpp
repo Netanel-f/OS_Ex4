@@ -99,14 +99,14 @@ void setupClient(struct Client * clientData, char * mainArgs[]){
     //todo print connect succeeded.
 }
 
-void createGroupValidation(Command * command) {
+void validateGroupCreation(Command * command, std::string * senderName) {
     // check if name of group is valid,
     if(isNameValid(&(command->name))) {
         if (!command->clients.empty()) {
             bool foundOthersUsers = false;
             for (auto &clientName : command->clients) {
                 if (!isNameValid(&clientName)) { break; }
-                if (!(clientName == command->name)) { foundOthersUsers = true}
+                if (!(clientName == *senderName)) { foundOthersUsers = true}
             }
 
             if (foundOthersUsers) {
@@ -116,6 +116,17 @@ void createGroupValidation(Command * command) {
         }
     }
 
+    // if arrived here - one of the names is invalid
+    //todo handle error
+}
+
+void validateSend(Command * command, std::string * senderName) {
+    if (isNameValid(&(command->name))) {
+        if (!(command->name == *senderName)) {
+            //todo send request to server
+            return;
+        }
+    }
     // if arrived here - one of the names is invalid
     //todo handle error
 }
