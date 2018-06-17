@@ -170,7 +170,7 @@ void selectPhase(serverDB * serverData) {
     int retVal;
     while (true) {
         readfds = clientsfds;
-        retVal = select(MAX_QUEUE+1, &readfds, nullptr, nullptr, nullptr);
+        retVal = select(MAX_QUEUE+2, &readfds, nullptr, nullptr, nullptr);
         errCheck(retVal, "select");
         //todo terminate server and return -1;
 
