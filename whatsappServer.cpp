@@ -103,6 +103,9 @@ class Server{
 
 //// ===============================  Forward Declarations ============================================
 
+//// input checking
+int parsePortNum(int argc, char **argv);
+
 //// errors
 void errCheck(int &retVal, const std::string &funcName, int successVal = 0);
 
@@ -352,7 +355,7 @@ void Server::clientExit(Command c){
     // remove caller from server
     clients.erase(c.caller);
 
-    // todo print sucess to server and client
+    // todo print success to server and client
     print_exit();
 }
 
@@ -377,6 +380,25 @@ bool Server::isAlNumString(std::string &str){
 
 
 //// ===============================  Helper Functions ============================================
+
+//// input checking
+int parsePortNum(int argc, char **argv){
+
+    //// check args
+    if (argc != 2) {
+        printf("Usage: whatsappServer portNum\n");  //todo server shouldnt crash upon receiving illegal requests?
+        exit(1);
+    }
+
+    int portNumber = atoi(argv[1]);
+
+    if (portNumber < 0 || portNumber > 65535) {
+        printf("Usage: whatsappServer portNum\n");
+        exit(1);
+    }
+
+    return portNumber;
+}
 
 
 //// errors
@@ -404,20 +426,9 @@ void errCheck(int &retVal, const std::string &funcName, int successVal = 0) {
 //// =============================== Main Function ================================================
 
 int main(int argc, char *argv[]) {
+
     //// --- Init  ---
-    //// check args
-    if (argc != 2) {
-        printf("Usage: whatsappServer portNum\n");  //todo server shouldnt crash upon receiving illegal requests?
-        exit(1);
-    }
-
-    int portNumber = atoi(argv[1]);
-
-    if (portNumber < 0 || portNumber > 65535) {
-        printf("Usage: whatsappServer portNum\n");
-        exit(1);
-    }
-
+    int portNumber = parsePortNum(argc, argv);
 
     //// init Server
     Server server((unsigned short)portNumber);  // todo J is conversion ok?
@@ -440,5 +451,5 @@ int main(int argc, char *argv[]) {
     //// close
 
     //// --- Repeat  ---
-    //todo disconnect clients clear memory and exit(0)
+    //todo disconnect clients, clear memory, and exit(0)
 }
