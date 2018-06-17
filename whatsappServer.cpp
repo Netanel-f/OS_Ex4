@@ -67,8 +67,12 @@ class Server{
   std::map<std::string, Group *> groups;
  
  public:
+
+    //// C-tor
+    Server() = default; //todo J do we need this?
+    explicit void Server(unsigned short portNumber);
+
     //// server actions
-    void setupServer(unsigned short portNumber);
     void selectPhase();
     void connectNewClient();
     void serverStdInput();
@@ -106,7 +110,7 @@ void errCheck(int &retVal, const std::string &funcName, int successVal = 0);
 
 //// server actions
 
-void Server::setupServer(unsigned short portNumber) {
+void Server::Server(unsigned short portNumber) {
 
     char serverName[MAX_HOST_NAME_LEN + 1];
     int welcomeSocket;
@@ -415,12 +419,11 @@ int main(int argc, char *argv[]) {
 
 
     //// init Server
-    Server server; // todo constructor
+    Server server((unsigned short)portNumber);  // todo J is conversion ok?
 
     //// --- Setup  ---
     //// create socket
     //// bind to an ip adress and port
-    server.setupServer((unsigned short)portNumber); // todo J is conversion ok?
 
     //// --- Wait  ---
     //// listen
