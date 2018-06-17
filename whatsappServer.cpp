@@ -112,15 +112,14 @@ void errCheck(int &retVal, const std::string &funcName, int successVal = 0);
 
 void Server::Server(unsigned short portNumber) {
 
-    char serverName[MAX_HOST_NAME_LEN + 1];
-    int welcomeSocket;
+    char srvName[MAX_HOST_NAME_LEN + 1];
     struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
     struct hostent *hostEnt;
 
-//    int retVal = gethostname(serverName, MAX_HOST_NAME_LEN);
+//    int retVal = gethostname(srvName, MAX_HOST_NAME_LEN);
 //    errCheck(retVal, "gethostname");
     bzero(&sa,sizeof(struct sockaddr_in));
-    hostEnt = gethostbyname(serverName);
+    hostEnt = gethostbyname(srvName);
     if (hostEnt == nullptr) {
 //        errCheck("gethostbyname");    //todo need to handle error
     }
@@ -139,6 +138,8 @@ void Server::Server(unsigned short portNumber) {
     listen(welcomeSocket, MAX_QUEUE);
 
     // todo initialise fields
+    strcpy(serverName,srvName);
+    serverPort = portNumber;
 
 }
 
