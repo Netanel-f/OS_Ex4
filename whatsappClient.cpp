@@ -19,11 +19,21 @@ struct Client
     int sockfd;
 };
 
+// command
+struct Command
+{
+    command_type type;
+    std::string name;
+    std::string message;
+    std::vector<std::string> clients;
+};
+
 //// ===========================   Global Variables ===============================================
 
 
 //// ============================  Forward Declarations ===========================================
 void setupClient(struct Client * clientData, char * mainArgs[]);
+bool isNameValid(std::string * name);
 
 //// ============================== Main Function ================================================
 
@@ -46,7 +56,7 @@ int main(int argc, char *argv[])
 
 }
 
-
+//todo should we use bzero?
 void setupClient(struct Client * clientData, char * mainArgs[]){
     std::string clientName = std::string(mainArgs[1]);
 
@@ -67,6 +77,7 @@ void setupClient(struct Client * clientData, char * mainArgs[]){
 
     struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
     struct hostent * hostEnt;
+    bzero(&sa,sizeof(struct sockaddr_in));
 
     hostEnt = gethostbyname(mainArgs[2]);
     if (hostEnt== nullptr) {
@@ -86,6 +97,33 @@ void setupClient(struct Client * clientData, char * mainArgs[]){
     errCheck(retVal,"connect"); //todo printing
     *clientData = {clientName, sockfd};
     //todo print connect succeeded.
+}
+
+void createGroupValidation(Command * command) {
+    // check if name of group is valid,
+    if(isNameValid(&(command->name))) {
+        if (!command->clients.empty()) {
+            bool foundOthersUsers = false;
+            for (auto &clientName : command->clients) {
+                if (!isNameValid(&clientName)) { break; }
+                if (!(clientName == command->name)) { foundOthersUsers = true}
+            }
+
+            if (foundOthersUsers) {
+                //todo send request to server
+                return;
+            }
+        }
+    }
+
+    // if arrived here - one of the names is invalid
+    //todo handle error
+}
+
+bool isNameValid(std::string * name) {
+    return !(name->length() > WA_MAX_NAME ||
+            std::any_of(name->begin(), name->end(), !std::isalnum));
+
 }
 
 //// ==============================  Helper Functions =============================================
