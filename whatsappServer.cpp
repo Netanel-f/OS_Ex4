@@ -26,6 +26,17 @@ struct Client
     int sockfd;
 };
 
+// client
+struct Command
+{
+  command_type type;
+  std::string name;
+  std::string message;
+  std::vector<std::string> clients;
+};
+
+
+
 // clients Group
 struct clientsGroup
 {
@@ -51,17 +62,23 @@ struct Context
 //todo J there should probably be none for thread safety
 
 //// ============================  Forward Declarations ===========================================
-bool isClient(std::string& name, void* clientRegistry);
-void registerClient(std::string& name, void* clientRegistry);
+bool isClient(std::string& name, serverDB * serverData);
+bool isGroup(std::string& name, serverDB * serverData);
+void registerClient(std::string& name, serverDB * serverData);
 void errCheck(int &returnVal, const std::string &funcName, int checkVal=0);
 //todo N: maybe will chaging the errcheck to just print the error.
 //todo N: errors can be -1 / 0 / nullprt
 
 void setupServer(serverDB * serverData, unsigned short portNumber);
 void selectPhase(serverDB * serverData);
-void connectNewClient();
+void connectNewClient(serverDB * serverData);
 void serverStdInput();
 void handleClientRequest();
+
+void createGroup(Command c, serverDB * serverData);
+void send(Command c, serverDB * serverData);
+void who(Command c, serverDB * serverData);
+void serverExit(Command c, serverDB * serverData);
 
 
 //// =============================== Main Function ================================================
@@ -184,35 +201,88 @@ void establish(unsigned short portnum){
     //todo
 };
 
-void registerClient(std::string& name, void* clientRegistry){
+void registerClient(std::string& name, serverDB * serverData){
         //todo
 };
 
-bool isClient(std::string& name, void* clientRegistry){
+bool isClient(std::string& name, serverDB * serverData){
     //todo
 };
 
-void handleClientRequest(){
-        const std::string command = NULL; //todo
-        command_type type;
-        std::string name;
-        std::string message;
-        std::vector<std::string> clients;
-        parse_command(command, type, name, message, clients);
-        switch (type)
+bool isLegalClientName(std::string& name, serverDB * serverData){
+    //todo
+};
+
+void handleClientRequest(serverDB * serverData){
+        const std::string command = NULL; //todo read
+        Command c;
+        parse_command(command, c.type, c.name, c.message, c.clients);
+        switch (c.type)
         { //todo
             case CREATE_GROUP:
-            break;
+                createGroup(c, serverData);
+                break;
+                
             case SEND:
+                send(c, serverData);
                 break;
+                
             case WHO:
+                who(c, serverData);
                 break;
+                
             case EXIT:
+                serverExit(c, serverData);
                 break;
+                
             case INVALID:
+                //todo
                 break;
         }
 };
+
+void createGroup(Command c){
+    //// ensure group name legal
+    //// ensure group name unique
+
+    //// make set of clients (allowing duplicates) and ensuring all clients exists
+    //// add caller to set even if unspecified
+
+    //// ensure group has at least 2 members (including creating client)
+
+    //// add this group to DB,
+
+
+    /// and trigger output, both server and client
+    print_create_group(0,0,NULL,NULL); //todo
+
+}
+
+void send(Command c,serverDB * serverData){
+    //// if name in client
+    if(isClient(c.name, )){
+        //// ensure recipient exists
+        //// ensure recipient is not sender
+        //// send to client
+        print_send()
+    }
+    //// if name in groups
+    else{
+        //// ensure caller is in this group
+        //// send to all in group except caller
+    }
+
+    //// else error
+
+}
+
+void who(Command c){
+
+}
+
+void serverExit(Command c){
+
+}
 
 //// ===============================  Error Function ==============================================
 
