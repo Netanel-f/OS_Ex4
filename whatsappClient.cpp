@@ -74,7 +74,7 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
     }
 
     memset(&sa, 0,sizeof(sa));
-    memcpy(&sa.sin_addr, hostEnt->h_addr, hostEnt->h_length);
+    memcpy((char *)&sa.sin_addr, hostEnt->h_addr, hostEnt->h_length);
     sa.sin_family = hostEnt->h_addrtype;
     sa.sin_port = htons(port);
 
