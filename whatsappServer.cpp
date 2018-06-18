@@ -77,7 +77,7 @@ public:
 
     //// server actions
     void selectPhase();
-    void connectNewClient();
+    int connectNewClient(int welcomeSocket);
     void serverStdInput();
     void handleClientRequest();
 
@@ -171,9 +171,9 @@ void Server::selectPhase() {
     int retVal;
     while (true) {
         readfds = clientsfds;
-        retVal = select(MAX_QUEUE+2, &readfds, nullptr, nullptr, nullptr);
+        retVal = select(MAX_QUEUE+2, &readfds, nullptr, nullptr, nullptr); //todo maybe MAX+1
         if (retVal == -1) {
-            errCheck(retVal, "select");
+            print_error("select", errno);
             //todo terminate server and return -1;
         }else if (retVal == 0) {
             continue;
@@ -181,7 +181,8 @@ void Server::selectPhase() {
         //Returns a non-zero value if the bit for the file descriptor fd is set in the file descriptor set pointed to by fdset, and 0 otherwise
         if (FD_ISSET(welcomeSocket, &readfds)) {
             //will also add the client to the clientsfds
-            connectNewClient();
+            int connectionSocket = connectNewClient(welcomeSocket);
+            FD_SET(connectionSocket, &clientsfds);
         }
 
         if (FD_ISSET(STDIN_FILENO, &readfds)) {
@@ -198,8 +199,15 @@ void Server::selectPhase() {
     }
 }
 
-void Server::connectNewClient(){
-    //todo
+int Server::connectNewClient(int welcomeSocket){
+    int connectionSocket;
+    connectionSocket = accept(welcomeSocket, nullptr, nullptr);
+    if (connectionSocket < 0) {
+        print_error("accept", errno);
+        //todo exit?
+    } else {
+        return connectionSocket;
+    }
 }
 
 void Server::serverStdInput(){
