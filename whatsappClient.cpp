@@ -89,7 +89,8 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
         print_error("connect", errno);
         //todo close socket
     }
-    print_connection();
+    //todo send name to actually register.
+    print_connection(); //todo check first server reply
 }
 
 bool ClientObj::validateGroupCreation(Command * command) {
