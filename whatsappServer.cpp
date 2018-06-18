@@ -43,8 +43,11 @@ struct Command { //todo make init?
   std::string name;
   std::string message;
   std::vector<std::string> clients;
-  std::string caller;
+  std::string sender;
 };
+
+
+
 
 typedef std::pair<std::string, Client *> ClientPair;
 typedef std::pair<std::string, Group *> GroupPair;
@@ -85,7 +88,12 @@ private:
 //// DB modify
  private:
     //// send/recv
-    void sendToClient(std::string message, const std::string &clientName);
+    void prepSize(uint64_t size, Client *client);
+
+    void MessageToClient(std::string message, const std::string &clientName);
+    void successToClient(bool success, const std::string &clientName);
+
+    void whoToClient(std::vector<std::string> sortedVec, const std::string &clientName);
 
     //// DB modify
     void registerClient(std::string &name);
@@ -101,8 +109,7 @@ private:
     void clientExit(Command c);
 
     //// name legality
-    bool isLegalClientName(std::string &name);
-    bool isLegalGroupName(std::string &name);
+    bool isLegalGroupOrClientName(std::string &name);
     bool isAlNumString(std::string &str);
 
 };
@@ -199,18 +206,22 @@ void Server::selectPhase() {
 }
 
 void Server::connectNewClient(){
-    //todo
+    //todo do all
+
+    std::string name; //todo get name
+
+    registerClient(name);
 }
 
 void Server::serverStdInput(){
-    //todo
+    //todo wait for EXIT somehow (Select)
 }
 
 void Server::handleClientRequest(){
     commandStr = NULL; //todo read
     // todo clear old command?
     parse_command(commandStr, c.type, c.name, c.message, c.clients);
-    c.caller = "get caller"; //todo
+    c.sender = "get sender"; //todo
     switch (c.type) { //todo
         case CREATE_GROUP:createGroup(c);
             break;
@@ -225,7 +236,7 @@ void Server::handleClientRequest(){
             break;
 
         case INVALID:
-            //todo
+            print_invalid_input();
             break;
     }
 
@@ -234,28 +245,82 @@ void Server::handleClientRequest(){
 
 //// send/recv
 
-void Server::sendToClient(std::string message, const std::string &clientName){
+void Server::prepSize(uint64_t size, Client *client){
+    uint64_t datalen = size;
+    ssize_t written = write(client->sockfd, &datalen, sizeof(uint64_t));
+    if(written != c.sender.size()){
+        print_error("write", errno);
+    }
+}
+
+void Server::MessageToClient(std::string message, const std::string &clientName){
     Client *client = clients[clientName];
-    ssize_t written = write(client->sockfd, &message, message.size());
+
+    // send sender name size
+    prepSize(c.sender.size(), client);
+
+    //send sender name
+    ssize_t written = write(client->sockfd, &c.sender, c.sender.size());
+    if(written != c.sender.size()){
+        print_error("write", errno);
+    }
+
+    // send message size
+    prepSize(message.size(), client);
+
+    // send message
+    written = write(client->sockfd, &message, message.size());
     if(written != message.size()){
-        //todo err
+        print_error("write", errno);
     }
 
 }
+
+void Server::successToClient(bool success, const std::string &clientName){
+    Client *client = clients[clientName];
+
+    // send bool
+    ssize_t written = write(client->sockfd, &success, sizeof(success));
+    if(written != sizeof(success)){
+        print_error("write", errno);
+    }
+}
+
+void Server::whoToClient(std::vector<std::string> sortedVec, const std::string &clientName){
+    Client *client = clients[clientName];
+
+    //send vec size
+    prepSize(sortedVec.size(), client);
+
+    //send vec
+    ssize_t written = write(client->sockfd, &sortedVec, sortedVec.size());
+    if(written != sortedVec.size()){
+        print_error("write", errno);
+    }
+
+}
+
+
 
 //// DB modify
 
 void Server::registerClient(std::string &name) {
     //todo
 
-    if (!isLegalClientName(name)){
-        //todo err
+    if (!isLegalGroupOrClientName(name)){
+        //todo err how does this err look
     }
-    int sockfd = nullptr; //todo
+    int sockfd = nullptr; //todo get the sockfd
 
     Client newClient{name, sockfd}; //todo is this valid creation (scope?)
 
     clients.insert(ClientPair(name, &newClient));  //todo is this valid creation (scope?)
+
+    // print success on server
+    printf("%s: Connected Successfully.\n", name);
+
+    //todo should client print automatically, or should report sucess?
+
 }
 
 //// DB queries
@@ -273,12 +338,15 @@ bool Server::isGroup(std::string &name){
 
 void Server::createGroup(Command c) {
 
-    //// ensure group name legal & unique (not taken)
-    if(!isLegalGroupName(c.name)){
-        //todo err
+    // ensure group name legal & unique (not taken)
+    if(!isLegalGroupOrClientName(c.name)){
+        //print failure on server
+        print_create_group(true, false, c.sender, c.name);
+        //report failure to client
+        successToClient(false, c.sender);
     }
 
-    //// make set of clients (allowing duplicates) and ensuring all clients exists
+    // make set of clients (allowing duplicates) and ensuring all clients exists
     Group newGroup;
 
     newGroup.name = c.name;
@@ -290,9 +358,12 @@ void Server::createGroup(Command c) {
         if(newGroup.groupMembers.count(strName)){
 
 
-            //ensure client exists in server
+            // ensure client exists in server
             if(!isClient(strName)){
-                //todo err
+                //print failure on server
+                print_create_group(true, false, c.sender, c.name);
+                //report failure to client
+                successToClient(false, c.sender);
             }
 
             //add it to group
@@ -300,22 +371,26 @@ void Server::createGroup(Command c) {
         }
     }
 
-    //// add caller to set even if unspecified
-    newGroup.groupMembers.insert(ClientPair(c.caller, clients.at(c.caller)));
+    // add sender to set even if unspecified
+    newGroup.groupMembers.insert(ClientPair(c.sender, clients.at(c.sender)));
 
-    //// ensure group has at least 2 members (including creating client)
+    // ensure group has at least 2 members (including creating client)
     if(newGroup.groupMembers.size() < 2){
-        //todo err  J (we dont print anything. client should also check this)
-        // todo J  if client checks we might not even need this
 
+        //print failure on server
+        print_create_group(true, false, c.sender, c.name);
+        //report failure to client
+        successToClient(false, c.sender);
     }
 
-    //// add this group to DB
+    // add this group to DB
     groups.emplace(GroupPair(newGroup.name, &newGroup));
 
 
-    /// and trigger output, both server and client
-    print_create_group(0, 0, NULL, NULL); //todo client
+    //print success on server
+    print_create_group(true, true, c.sender, c.name);
+    //report success to client
+    successToClient(true, c.sender);
 
 }
 
@@ -325,37 +400,48 @@ void Server::send(Command c) {
     if (isClient(c.name)) {
 
         //// ensure recipient is not sender
-        if(c.name == c.caller){
-            //todo err
+        if(c.name == c.sender){
+            // notify sender of failure
+            successToClient(false, c.sender);
         }
 
         //// send to client
-        // todo send
-        std::string message = c.caller + ": " + c.message;
-        sendToClient(message,c.name);
-        // todo print success for caller
+
+        std::string message = c.sender + ": " + c.message;
+
+        // message the recipient client
+        MessageToClient(message, c.name);
+
+        // notify sender of success
+        successToClient(true,c.sender);
+
     }
         //// if name in groups
     else if(isGroup(c.name)){
 
         //// ensure caller is in this group
         if(!groups.count(c.name)){
-            //todo err
+            // notify sender of failure
+            successToClient(false, c.sender);
         }
 
         //// send to all in group except caller
         for(ClientPair & pair : groups.at(c.name)->groupMembers){
-            // if not caller
-            if(pair.first != c.caller){
-                //todo print send
-                std::string message = c.caller + ": " + c.message;
-                sendToClient(message,pair.first);
+            // if not sender
+            if(pair.first != c.sender){
+                std::string message = c.sender + ": " + c.message;
+                MessageToClient(message, pair.first);
             }
         }
-    }
 
-    //// else error
-    //todo err
+        // notify sender of success
+        successToClient(true,c.sender);
+
+    }else{
+        //// else error
+        // notify sender of failure
+        successToClient(false, c.sender);
+    }
 
 }
 
@@ -368,44 +454,40 @@ void Server::who(Command c) {
         namesVec.push_back(pair.first);
     }
 
-    //todo ensure sort gives desired
     std::sort(namesVec.front(), namesVec.back());
 
-    // todo send list to printing
-    print_who_client(); //todo print
+    //send list to printing
+    whoToClient(namesVec, c.sender);
 
 
 }
 
 void Server::clientExit(Command c){
-    //todo
 
-    // remove caller from all groups
+    // remove sender from all groups
     for(GroupPair & pair : groups){
 
-        // remove caller from members of group (if he is there)
+        // remove sender from members of group (if he is there)
         Group *group = pair.second;
-        group->groupMembers.erase(c.caller);
+        group->groupMembers.erase(c.sender);
     }
 
-    // remove caller from server
-    clients.erase(c.caller);
+    //print success to server
+    print_exit(true,c.sender);
+    // send success to client
+    successToClient(true, c.sender);
 
-    // todo print success to server and client
-    print_exit();
+    // remove sender from server (after reported success)
+    clients.erase(c.sender);
 }
 
 //// name legality
 
-bool Server::isLegalClientName(std::string &name){
+bool Server::isLegalGroupOrClientName(std::string &name){
     // ensure alphanumeric only and name not taken.
-    return(isAlNumString(name) && !isClient(name));
+    return(isAlNumString(name) && !isClient(name) && !isGroup(name));
 }
 
-bool Server::isLegalGroupName(std::string &name){
-    // ensure alphanumeric only and name not taken.
-    return(isAlNumString(name) && !isGroup(name));
-}
 
 bool Server::isAlNumString(std::string &str){
     for(char c: str){
@@ -451,7 +533,7 @@ void errCheck(int &retVal, const std::string &funcName, int successVal = 0) {
     if (retVal == successVal) return;
 
     // set prefix
-    print_error(funcName, retVal); // todo J is this what is meant by error number?
+    print_error(funcName, errno); // todo J is this what is meant by error number?
 
     // exit
     exit(FUCK);
