@@ -395,14 +395,14 @@ int parsePortNum(int argc, char **argv){
 
     //// check args
     if (argc != 2) {
-        printf("Usage: whatsappServer portNum\n");  //todo server shouldnt crash upon receiving illegal requests?
+        print_server_usage();  //todo server shouldnt crash upon receiving illegal requests?
         exit(1);
     }
 
     int portNumber = atoi(argv[1]);
 
     if (portNumber < 0 || portNumber > 65535) {
-        printf("Usage: whatsappServer portNum\n");
+        print_server_usage();
         exit(1);
     }
 
