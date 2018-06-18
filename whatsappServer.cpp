@@ -7,6 +7,7 @@
 #include <list>
 #include <map>
 #include <iostream>
+#include <algorithm>
 #include "whatsappio.h"
 
 // Todo: check sucess, listed for EXIT,
@@ -15,6 +16,8 @@
 static const int MAX_QUEUE = 10;
 static const int MAX_HOST_NAME_LEN = 30;
 static const int MAX_GROUP_NAME_LEN = 30;
+static const int BUFF_SIZE = 256;
+static const int MAX_MESSAGE_LENGTH = 256;
 static const int FUCK = 1; // todo exit val?
 
 
@@ -78,6 +81,9 @@ class Server{
     void handleClientRequest();
 
  private:
+    //// send/recv
+    void sendToClient(std::string message, const std::string &clientName);
+
     //// DB modify
     void registerClient(std::string &name);
     
@@ -213,6 +219,17 @@ void Server::handleClientRequest(){
 
 };
 
+//// send/recv
+
+void Server::sendToClient(std::string message, const std::string &clientName){
+    Client *client = clients[clientName];
+    ssize_t written = write(client->sockfd, &message, message.size());
+    if(written != message.size()){
+        //todo err
+    }
+
+}
+
 //// DB modify
 
 void Server::registerClient(std::string &name) {
@@ -300,7 +317,10 @@ void Server::send(Command c) {
         }
 
         //// send to client
-        print_send(); // todo
+        // todo send
+        std::string message = c.caller + ": " + c.message;
+        sendToClient(message,c.name);
+        // todo print success for caller
     }
         //// if name in groups
     else if(isGroup(c.name)){
@@ -315,6 +335,8 @@ void Server::send(Command c) {
             // if not caller
             if(pair.first != c.caller){
                 //todo print send
+                std::string message = c.caller + ": " + c.message;
+                sendToClient(message,pair.first);
             }
         }
     }
@@ -332,6 +354,9 @@ void Server::who(Command c) {
     for(ClientPair & pair : clients){
         namesVec.push_back(pair.first);
     }
+
+    //todo ensure sort gives desired
+    std::sort(namesVec.front(), namesVec.back());
 
     // todo send list to printing
     print_who_client(); //todo print
