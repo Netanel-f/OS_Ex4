@@ -206,7 +206,7 @@ void Server::selectPhase() {
     }
 }
 
-int Server::connectNewClient(int welcomeSocket){
+int Server::connectNewClient(int welcomeSocket) {
     int connectionSocket;
     connectionSocket = accept(welcomeSocket, nullptr, nullptr);
     if (connectionSocket < 0) {
@@ -215,6 +215,7 @@ int Server::connectNewClient(int welcomeSocket){
     } else {
         return connectionSocket;
     }
+}
 
 
 void Server::serverStdInput(){
