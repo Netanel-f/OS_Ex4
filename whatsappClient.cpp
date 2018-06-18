@@ -28,11 +28,7 @@ struct Command
     std::vector<std::string> clients;
 };
 
-//// ===========================   Global Variables ===============================================
-
-
 //// ============================  Forward Declarations ===========================================
-void setupClient(struct Client * clientData, char * mainArgs[]);
 bool validateGroupCreation(Command * command, std::string * senderName);
 bool validateSend(Command * command, std::string * senderName);
 bool isNameValid(std::string * name);
@@ -40,79 +36,70 @@ void requestCreateGroup(Command * command, std::string * senderName);
 void requestSend(Command * command, std::string * senderName);
 void requestWho(Command * command);
 void requestExit();
-
-//// ============================== Main Function ================================================
-
-int main(int argc, char *argv[])
-{
-    if (argc != 4) {
-        printf("Usage: whatsappServer clientName serverAddress serverPort\n");
-        exit(1);
-    }
-
-    //// --- Setup  ---
-    Client clientData;
-    setupClient(&clientData, argv);
-
-    //// connect to specified port
-    //// (Bind to server?)
-    //// wait for Server
-
-    //// --- Setup  ---
-
-}
-
-//todo should we use bzero?
-void setupClient(struct Client * clientData, char * mainArgs[]){
-    std::string clientName = std::string(mainArgs[1]);
-
-    if (clientName.length() > WA_MAX_NAME ||
-            std::any_of(clientName.begin(), clientName.end(), !std::isalnum)) {
-        printf("Usage: whatsappServer clientName serverAddress serverPort\n");
-        exit(1);
-    }
-
-    int portNumber = atoi(mainArgs[3]);
-
-    //todo validate args!
-    if (portNumber < 0 || portNumber> 65535){
-        printf("Usage: whatsappServer clientName serverAddress serverPort\n");
-        exit(1);
-    }
+void validateMainArgc(int argc, char **argv);
+std::string parseClientName(char * name);
+unsigned short parseClientPort(char * port);
 
 
+// Client class
+
+class ClientObj {
+    std::string clientName;
+    int sockfd;
+
+public:
+
+    //// C-tor
+    explicit void ClientObj(const std::string &clientName, unsigned short port, char * server);
+
+    //// client actions
+private:
+    bool validateGroupCreation(Command * command);
+    bool validateSend(Command * command);
+    void requestCreateGroup(Command * command);
+    void requestSend(Command * command);
+    void requestWho(Command * command);
+    void requestExit();
+};
+
+ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * server) {
     struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
     struct hostent * hostEnt;
-    bzero(&sa,sizeof(struct sockaddr_in));
+    bzero(&sa, sizeof(struct sockaddr_in));
 
-    hostEnt = gethostbyname(mainArgs[2]);
-    if (hostEnt== nullptr) {
-//        errCheck("gethostbyname");    //todo need to handle error
+    hostEnt = gethostbyname(server);
+    if (hostEnt == nullptr) {
+        print_error("gethostbyname", errno);
+        //todo should we exit?
     }
 
     memset(&sa, 0,sizeof(sa));
     memcpy(&sa.sin_addr, hostEnt->h_addr, hostEnt->h_length);
     sa.sin_family = hostEnt->h_addrtype;
-    sa.sin_port = htons((u_short) portNumber);
+    sa.sin_port = htons(port);
 
-    int sockfd;
     sockfd = socket(hostEnt->h_addrtype, SOCK_STREAM, 0);
-    errCheck(sockfd, "socket"); //todo printing
+    if (sockfd < 0) {
+        print_error("socket", errno);
+        //todo should we exit?
+    }
 
     int retVal = connect(sockfd, (struct sockaddr*)&sa, sizeof(sa));
-    errCheck(retVal,"connect"); //todo printing
-    *clientData = {clientName, sockfd};
-    //todo print connect succeeded.
+    if (retVal < 0) {
+        print_error("connect", errno);
+        //todo close socket
+    }
+    print_connection();
 }
 
-bool validateGroupCreation(Command * command, std::string * senderName) {
+bool ClientObj::validateGroupCreation(Command * command) {
     // check if name of group is valid,
     if(isNameValid(&(command->name))) {
         if (!command->clients.empty()) {
             bool foundOthersUsers = false;
             for (auto &clientName : command->clients) {
                 if (!isNameValid(&clientName)) { break; }
-                if (!(clientName == *senderName)) { foundOthersUsers = true}
+                if (!(clientName == this->clientName)) { foundOthersUsers = true; }
             }
 
             if (foundOthersUsers) {
@@ -125,9 +112,9 @@ bool validateGroupCreation(Command * command, std::string * senderName) {
     return false;
 }
 
-bool validateSend(Command * command, std::string * senderName) {
+bool ClientObj::validateSend(Command * command) {
     if (isNameValid(&(command->name))) {
-        if (!(command->name == *senderName)) {
+        if (!(command->name == this->clientName)) {
             //todo send request to server
             return true;
         }
@@ -136,30 +123,79 @@ bool validateSend(Command * command, std::string * senderName) {
     return false;
 }
 
-void requestCreateGroup(Command * command, std::string * senderName) {
-    if (validateGroupCreation(command, senderName)) {
+void ClientObj::requestCreateGroup(Command * command){
+    if (validateGroupCreation(command)) {
         //todo send request to server
         return;
     } else {
-        //todo handle error
+        print_invalid_input();
     }
 }
 
-void requestSend(Command * command, std::string * senderName) {
-    if (validateSend(command, senderName)){
+void ClientObj::requestSend(Command * command) {
+    if (validateSend(command)){
         //todo send request to server
         return;
     } else {
-        //todo handle error
+        print_invalid_input();
     }
 }
 
-void requestWho(Command * command) {
+void ClientObj::requestWho(Command * command){
     //todo send who request
 }
-
-void requestExit() {
+void ClientObj::requestExit(){
     //todo send exit request to server and clear client memort.
+
+}
+
+//// ===========================   Global Variables ===============================================
+
+//// ============================== Main Function ================================================
+
+void validateMainArgc(int argc) {
+    if (argc != 4) {
+        print_server_usage();
+        exit(1);
+    }
+}
+std::string parseClientName(char * name) {
+
+    std::string clientName = std::string(name);
+
+    if (clientName.length() > WA_MAX_NAME ||
+        std::any_of(clientName.begin(), clientName.end(), !std::isalnum)) {
+        print_server_usage();
+        exit(1);
+    }
+    return clientName;
+}
+
+unsigned short parseClientPort(char * port) {
+    int portNumber = atoi(port);
+
+    //todo validate args!
+    if (portNumber < 0 || portNumber > 65535) {
+        print_server_usage();
+        exit(1);
+    }
+    return (unsigned short)portNumber;
+}
+
+int main(int argc, char *argv[])
+{
+    //// --- Setup  ---
+    validateMainArgc(argc);
+    std::string clientName = parseClientName(argv[1]);
+    unsigned short clientPort = parseClientPort(argv[3]);
+    ClientObj client = ClientObj(clientName, clientPort, argv[2]);
+
+    //// connect to specified port
+    //// (Bind to server?)
+    //// wait for Server
+
+    //// --- Setup  ---
+
 }
 
 bool isNameValid(std::string * name) {
