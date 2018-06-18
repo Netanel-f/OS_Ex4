@@ -84,9 +84,8 @@ public:
     void serverStdInput();
     void handleClientRequest();
 
-private:
 //// DB modify
- private:
+private:
     //// send/recv
     void prepSize(uint64_t size, Client *client);
 
@@ -178,7 +177,7 @@ void Server::selectPhase() {
     int retVal;
     while (true) {
         readfds = clientsfds;
-        retVal = select(MAX_QUEUE+2, &readfds, nullptr, nullptr, nullptr); //todo maybe MAX+1
+        retVal = select(MAX_QUEUE+2, &readfds, nullptr, nullptr, nullptr); //todo implement MAX_fd+1
         if (retVal == -1) {
             print_error("select", errno);
             //todo terminate server and return -1;
