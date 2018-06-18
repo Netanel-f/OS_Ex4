@@ -215,6 +215,7 @@ int Server::connectNewClient(int welcomeSocket) {
     } else {
         return connectionSocket;
     }
+    registerClient() //todo register client name
 }
 
 
@@ -223,11 +224,30 @@ void Server::serverStdInput(){
 }
 
 void Server::handleClientRequest(){
-    commandStr = NULL; //todo read
-    // todo clear old command?
+
+    // todo get the socket for calling client
+
+    Client* client;
+
+    int64_t msgLen;
+
+    ssize_t n = read(client->sockfd, &msgLen, sizeof(msgLen));
+    if(n<0){
+        print_error("read", errno);
+    }
+
+    // read string from command
+    n = read(client->sockfd, &commandStr, msgLen);
+    if(n<0){
+        print_error("read", errno);
+    }
+
+    // todo clear old command ?
+
     parse_command(commandStr, c.type, c.name, c.message, c.clients);
-    c.sender = "get sender"; //todo
-    switch (c.type) { //todo
+    c.sender = client->name;
+
+    switch (c.type) {
         case CREATE_GROUP:createGroup(c);
             break;
 
@@ -278,7 +298,6 @@ void Server::MessageToClient(std::string message, const std::string &clientName)
     if(written != message.size()){
         print_error("write", errno);
     }
-
 }
 
 void Server::successToClient(bool success, const std::string &clientName){
@@ -323,6 +342,9 @@ void Server::registerClient(std::string &name) {
 
     // print success on server
     printf("%s: Connected Successfully.\n", name);
+
+    // notify sucess to client
+    successToClient(true,name);
 
     //todo should client print automatically, or should report sucess?
 
@@ -401,16 +423,16 @@ void Server::createGroup(Command c) {
 
 void Server::send(Command c) {
 
-    //// if name in client
+    // if name in clients
     if (isClient(c.name)) {
 
-        //// ensure recipient is not sender
+        // ensure recipient is not sender
         if(c.name == c.sender){
             // notify sender of failure
             successToClient(false, c.sender);
         }
 
-        //// send to client
+        // send to client
 
         std::string message = c.sender + ": " + c.message;
 
@@ -446,6 +468,7 @@ void Server::send(Command c) {
         //// else error
         // notify sender of failure
         successToClient(false, c.sender);
+        // todo print failure server (?)
     }
 
 }
