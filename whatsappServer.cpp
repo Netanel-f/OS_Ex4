@@ -7,6 +7,7 @@
 #include <list>
 #include <map>
 #include <iostream>
+#include <errno.h>
 #include "whatsappio.h"
 
 // Todo: check sucess, listed for EXIT,
@@ -55,18 +56,18 @@ typedef std::pair<std::string, Group *> GroupPair;
  * Class representing running instance of Server.
  */
 class Server{
-  
-  std::string serverName;
-  unsigned short serverPort;
-  int welcomeSocket;
 
-  std::string commandStr;
-  Command c;
+    std::string serverName;
+    unsigned short serverPort;
+    int welcomeSocket;
 
-  std::map<std::string, Client *> clients;
-  std::map<std::string, Group *> groups;
- 
- public:
+    std::string commandStr;
+    Command c;
+
+    std::map<std::string, Client *> clients;
+    std::map<std::string, Group *> groups;
+
+public:
 
     //// C-tor
     explicit void Server(unsigned short portNumber);
@@ -77,20 +78,20 @@ class Server{
     void serverStdInput();
     void handleClientRequest();
 
- private:
-    //// DB modify
+private:
+//// DB modify
     void registerClient(std::string &name);
-    
+
     //// DB queries
     bool isClient(std::string &name);
     bool isGroup(std::string &name);
-    
+
     //// request handling
     void createGroup(Command c);
     void send(Command c);
     void who(Command c);
     void clientExit(Command c);
-    
+
     //// name legality
     bool isLegalClientName(std::string &name);
     bool isLegalGroupName(std::string &name);
@@ -109,36 +110,43 @@ void errCheck(int &retVal, const std::string &funcName, int successVal = 0);
 //// ===============================  Class Server ============================================
 
 //// server actions
-
+//todo when print_error should we exit the program?
 void Server::Server(unsigned short portNumber) {
 
     char srvName[MAX_HOST_NAME_LEN + 1];
     struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
     struct hostent *hostEnt;
 
-//    int retVal = gethostname(srvName, MAX_HOST_NAME_LEN);
-//    errCheck(retVal, "gethostname");
+    int retVal = gethostname(srvName, MAX_HOST_NAME_LEN);
+    if (retVal < 0) { print_error("gethostname", errno); }
+
     bzero(&sa,sizeof(struct sockaddr_in));
     hostEnt = gethostbyname(srvName);
     if (hostEnt == nullptr) {
-//        errCheck("gethostbyname");    //todo need to handle error
+        print_error("gethostbyname", errno);
+        //todo should we exit?
     }
 
-    memset(&sa, 0,sizeof(sa));
-    sa.sin_family = AF_INET;
+    memset(&sa, 0,sizeof(struct sockaddr_in));
+    sa.sin_family = hostEnt->h_addrtype;
     memcpy(&sa.sin_addr, hostEnt->h_addr, hostEnt->h_length);
     sa.sin_port = htons(portNumber);
 
     welcomeSocket = socket(AF_INET, SOCK_STREAM, 0);
-    errCheck(welcomeSocket, "socket");
+    if (welcomeSocket < 0){ print_error("socket", errno); }
 
-    int retVal = bind(welcomeSocket, (struct sockaddr*)&sa, sizeof(struct sockaddr_in));
-    errCheck(retVal, "bind");
 
-    listen(welcomeSocket, MAX_QUEUE);
+    retVal = bind(welcomeSocket, (struct sockaddr*)&sa, sizeof(struct sockaddr_in));
+    if (retVal < 0) {
+        print_error("bind", errno);
+    }
+
+
+    retVal = listen(welcomeSocket, MAX_QUEUE);
+    if (retVal < 0) { print_error("listen", errno); }
 
     // todo initialise fields
-    strcpy(serverName,srvName);
+    strcpy(serverName, srvName);
     serverPort = portNumber;
 }
 
@@ -432,7 +440,7 @@ int main(int argc, char *argv[]) {
     int portNumber = parsePortNum(argc, argv);
 
     //// init Server
-    Server server((unsigned short)portNumber);  // todo J is conversion ok?
+    Server server((unsigned short)portNumber);  // todo J is conversion ok? maybe cast inside parse
 
     //// --- Setup  ---
     //// create socket
