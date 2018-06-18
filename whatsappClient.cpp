@@ -65,7 +65,7 @@ private:
 ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * server) {
     struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
     struct hostent * hostEnt;
-    bzero(&sa, sizeof(struct sockaddr_in));
+    bzero(&sa, sizeof(struct sa));
 
     hostEnt = gethostbyname(server);
     if (hostEnt == nullptr) {
@@ -74,7 +74,7 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
     }
 
     memset(&sa, 0,sizeof(sa));
-    memcpy(&sa.sin_addr, hostEnt->h_addr, hostEnt->h_length);
+    memcpy((char *)&sa.sin_addr, hostEnt->h_addr, hostEnt->h_length);
     sa.sin_family = hostEnt->h_addrtype;
     sa.sin_port = htons(port);
 
