@@ -51,8 +51,10 @@ private:
     void handleServerReply();
     void handleClientRequest(std::string * userInput);
     bool validateGroupCreation(Command * command, std::string * validateCmd);
+    bool validateSend(Command * command);
     void writeToServer(const std::string& command);
-    int readFromServer(char * buf, int n);
+//    int readFromServer(char * buf, int n);
+    std::string readFromServer();
 
 };
 
@@ -99,33 +101,27 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
 }
 
 void ClientObj::connectToServer() {
-    std::string cmd = "connect ";   //todo fix parse_command to support CONNECT
+    std::string cmd = "connect ";
     cmd += this->clientName;
     writeToServer(cmd);
 }
 
 
 void ClientObj::handleServerReply() {
-//    uint64_t msgSize;
-    char buffer[4]; //todo supporting 4digits length of msg
-    bzero(buffer, 4);
-    readFromServer(buffer, 4);
-//
-    int msgSize = atoi(buffer);
-    char incomingMsg[msgSize];
-    readFromServer(incomingMsg, msgSize);
+    std::string incomingMsg = readFromServer();
 
     Command sReply;
     parse_response(incomingMsg, sReply.type, sReply.name, sReply.message, sReply.clients);
 
-    bool replyResult = (strcmp(sReply.message) == 0);
+    bool replyResult = (strcmp(sReply.message) == "T");
 
     // send T/F
     // create_group T/F <group_name>
-    // Who <ret_client_name_seperated_by_commas_without_spaces>
+    // Who <ret_client_name_separated_by_commas_without_spaces>
     // exit T/F
     // CONNECT T/F
     // message T/F sender message
+    // connect T/F/D
 
     switch (sReply.type) {
         case CREATE_GROUP:
@@ -147,6 +143,8 @@ void ClientObj::handleServerReply() {
         case CONNECT:
             if (replyResult) {
                 print_connection();
+            } else if (strcmp(sReply.message) == "D"){
+                print_dup_connection();
             } else {
                 print_fail_connection();
             }
@@ -174,7 +172,7 @@ void ClientObj::handleClientRequest(std::string * userInput) {
             break;
 
         case SEND:
-            if ((command.name != this->clientName) && isNameValid(&(command.name))) {
+            if (validateSend(&command)) {
                 writeToServer(command.command);
             }
             break;
@@ -208,7 +206,7 @@ bool ClientObj::validateGroupCreation(Command * command, std::string *validateCm
             auto last = std::unique(command->clients.begin(), command->clients.end());
             command->clients.erase(last, command->clients.end());
 
-            if (command->clients.empty()) {
+            if (command->clients.empty() || command->clients.size() > WA_MAX_GROUP) {
                 return false;
             }
 
@@ -230,20 +228,28 @@ bool ClientObj::validateGroupCreation(Command * command, std::string *validateCm
     return false;
 }
 
+bool ClientObj::validateSend(Command * command) {
+    return ((command->name != this->clientName) && isNameValid(&(command->name))
+        && (command->message.size() <= WA_MAX_MESSAGE));
+
+}
 void ClientObj::writeToServer(const std::string& command) {
-    size_t cmdlen = command.length();
-    ssize_t wrote = write(this->sockfd, &command, cmdlen);
+//    unsigned long cmdlen =  command.length();
+    const char * cmdSend = command.c_str();
+
+//    ssize_t wrote = write(this->sockfd, cmdSend, cmdlen);
+    ssize_t wrote = write(this->sockfd, cmdSend, WA_MAX_INPUT);
     if (wrote < 0) {
         print_error("write", errno);
     }
 }
 
-int ClientObj::readFromServer(char * buf, int n) {
+std::string ClientObj::readFromServer() {
     int bcount = 0; /* counts bytes read */
     int br = 0; /* bytes read this pass */
-
-    while (bcount < n) { /* loop until full buffer */
-        br = read(this->sockfd, buf, n-bcount);
+    char * buf[WA_MAX_INPUT];
+    while (bcount < WA_MAX_INPUT) { /* loop until full buffer */
+        br = read(this->sockfd, buf, WA_MAX_INPUT-bcount);
         if (br > 0) {
             bcount += br;
             buf += br;
@@ -252,7 +258,9 @@ int ClientObj::readFromServer(char * buf, int n) {
             print_error("read", errno);
         }
     }
-    return(bcount);
+//    return(bcount);
+    std::string msg = *buf;
+    return msg;
 }
 
 //// ===========================   Global Variables ===============================================

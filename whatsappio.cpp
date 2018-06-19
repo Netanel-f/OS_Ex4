@@ -141,6 +141,15 @@ void parse_command(const std::string& command, command_type& commandT,
         commandT = WHO;
     } else if (!strcmp(s, "exit")) {
         commandT = EXIT;
+    } else if (!strcmp(s, "connect")) {
+        commandT = CONNECT;
+        s = strtok_r(NULL, " ", &saveptr);
+        if (!s) {
+            commandT = INVALID;
+            return;
+        } else {
+            name = s;
+        }
     } else {
         commandT = INVALID;
     }
@@ -152,7 +161,7 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
     // create_group T/F <group_name>
     // Who <ret_client_name_seperated_by_commas_without_spaces>
     // exit T/F
-    // CONNECT T/F
+    // connect T/F/D
 
     char sReply[WA_MAX_SERVER_RESPONSE];
     const char *s;
