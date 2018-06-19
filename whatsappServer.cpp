@@ -53,8 +53,10 @@ typedef std::pair<std::string, Client *> ClientPair;
 typedef std::pair<std::string, Group *> GroupPair;
 
 
-//// ===========================   Global Variables ===============================================
-//todo J there should probably be none for thread safety
+////todo  ===========================   todos ===============================================
+// todo EXIT stdin (and watching for it)
+// todo calling register from connect
+// todo reading command str from client
 
 //// ============================  Class Declarations =============================================
 
@@ -89,10 +91,9 @@ private:
     //// send/recv
     void prepSize(uint64_t size, Client *client);
 
-    void MessageToClient(std::string message, const std::string &clientName);
-    void successToClient(bool success, const std::string &clientName);
-
-    void whoToClient(std::vector<std::string> sortedVec, const std::string &clientName);
+    void strToClient(const std::string& str, const std::string &clientName);
+    void MessageToClient(const std::string& message, const std::string &senderName,
+                         const std::string &recieverName);
 
     //// DB modify
     void registerClient(std::string &name);
@@ -109,7 +110,8 @@ private:
     void clientExit(Command c);
 
     //// name legality
-    bool isLegalGroupOrClientName(std::string &name);
+    bool isLegalName(std::string &name);
+    bool isTakenName(std::string &name);
     bool isAlNumString(std::string &str);
 
 };
@@ -293,62 +295,83 @@ void Server::prepSize(uint64_t size, Client *client){
     }
 }
 
-void Server::MessageToClient(std::string message, const std::string &clientName){
+void Server::strToClient(const std::string& str, const std::string &clientName){
     Client *client = clients[clientName];
 
-    // send sender name size
-    prepSize(c.sender.size(), client);
-
-    //send sender name
-    ssize_t written = write(client->sockfd, &c.sender, c.sender.size());
-    if(written != c.sender.size()){
-        print_error("write", errno);
-    }
-
-    // send message size
-    prepSize(message.size(), client);
+    // send string size
+    prepSize(str.size(), client);
 
     // send message
-    written = write(client->sockfd, &message, message.size());
-    if(written != message.size()){
+    ssize_t written = write(client->sockfd, &str, str.size());
+    if(written != str.size()){ //todo J is correct error checking?
         print_error("write", errno);
     }
 }
 
-void Server::successToClient(bool success, const std::string &clientName){
-    Client *client = clients[clientName];
 
-    // send bool
-    ssize_t written = write(client->sockfd, &success, sizeof(success));
-    if(written != sizeof(success)){
-        print_error("write", errno);
-    }
-}
+//void Server::MessageToClient(std::string message, const std::string &clientName){
+//    Client *client = clients[clientName];
+//
+//    // send sender name size
+//    prepSize(c.sender.size(), client);
+//
+//    //send sender name
+//    ssize_t written = write(client->sockfd, &c.sender, c.sender.size());
+//    if(written != c.sender.size()){
+//        print_error("write", errno);
+//    }
+//
+//    // send message size
+//    prepSize(message.size(), client);
+//
+//    // send message
+//    written = write(client->sockfd, &message, message.size());
+//    if(written != message.size()){
+//        print_error("write", errno);
+//    }
+//}
+//
+//void Server::successToClient(bool success, const std::string &clientName){
+//    Client *client = clients[clientName];
+//
+//    // send bool
+//    ssize_t written = write(client->sockfd, &success, sizeof(success));
+//    if(written != sizeof(success)){
+//        print_error("write", errno);
+//    }
+//}
 
-void Server::whoToClient(std::vector<std::string> sortedVec, const std::string &clientName){
-    Client *client = clients[clientName];
-
-    //send vec size
-    prepSize(sortedVec.size(), client);
-
-    //send vec
-    ssize_t written = write(client->sockfd, &sortedVec, sortedVec.size());
-    if(written != sortedVec.size()){
-        print_error("write", errno);
-    }
-
-}
+//void Server::whoToClient(std::vector<std::string> sortedVec, const std::string &clientName){
+//    Client *client = clients[clientName];
+//
+//    //send vec size
+//    prepSize(sortedVec.size(), client);
+//
+//    //send vec
+//    ssize_t written = write(client->sockfd, &sortedVec, sortedVec.size());
+//    if(written != sortedVec.size()){
+//        print_error("write", errno);
+//    }
+//
+//}
 
 
 
 //// DB modify
 
-void Server::registerClient(std::string &name) {
-    //todo
+void Server::registerClient(std::string &name) { //todo call this func
 
-    if (!isLegalGroupOrClientName(name)){
-        //todo err how does this err look
+    if (!isLegalName(name)){
+
+        // notify if name is duplicate
+        std::string taken = isTakenName(name) ? "D" : "F";
+
+        // notify failure to client
+        strToClient("connect "+taken, name);
+
+        // todo make sure no server print
     }
+
     int sockfd = nullptr; //todo get the sockfd
 
     Client newClient{name, sockfd}; //todo is this valid creation (scope?)
@@ -359,9 +382,7 @@ void Server::registerClient(std::string &name) {
     printf("%s: Connected Successfully.\n", name);
 
     // notify sucess to client
-    successToClient(true,name);
-
-    //todo should client print automatically, or should report sucess?
+    strToClient("connect T", name);
 
 }
 
@@ -391,11 +412,12 @@ int Server::getMaxfd() {
 void Server::createGroup(Command c) {
 
     // ensure group name legal & unique (not taken)
-    if(!isLegalGroupOrClientName(c.name)){
+    if(!isLegalName(c.name)){
         //print failure on server
         print_create_group(true, false, c.sender, c.name);
+
         //report failure to client
-        successToClient(false, c.sender);
+        strToClient("create_group F", c.name);
     }
 
     // make set of clients (allowing duplicates) and ensuring all clients exists
@@ -412,10 +434,11 @@ void Server::createGroup(Command c) {
 
             // ensure client exists in server
             if(!isClient(strName)){
+
                 //print failure on server
                 print_create_group(true, false, c.sender, c.name);
                 //report failure to client
-                successToClient(false, c.sender);
+                strToClient("create_group F",c.sender);
             }
 
             //add it to group
@@ -432,7 +455,7 @@ void Server::createGroup(Command c) {
         //print failure on server
         print_create_group(true, false, c.sender, c.name);
         //report failure to client
-        successToClient(false, c.sender);
+        strToClient("create_group F",c.sender);
     }
 
     // add this group to DB
@@ -442,11 +465,13 @@ void Server::createGroup(Command c) {
     //print success on server
     print_create_group(true, true, c.sender, c.name);
     //report success to client
-    successToClient(true, c.sender);
+    strToClient("create_group T",c.sender);
 
 }
 
 void Server::send(Command c) {
+
+    std::string message = c.sender + ": " + c.message;
 
     // if name in clients
     if (isClient(c.name)) {
@@ -454,46 +479,48 @@ void Server::send(Command c) {
         // ensure recipient is not sender
         if(c.name == c.sender){
             // notify sender of failure
-            successToClient(false, c.sender);
+            strToClient("send F",c.sender);
         }
-
-        // send to client
-
-        std::string message = c.sender + ": " + c.message;
 
         // message the recipient client
-        MessageToClient(message, c.name);
+        strToClient("message T sender "+message, c.name);
 
         // notify sender of success
-        successToClient(true,c.sender);
+        strToClient("send T",c.sender);
+        // print success server
+        print_send(true, true,c.sender,c.name,message);
 
     }
-        //// if name in groups
+        // if name in groups
     else if(isGroup(c.name)){
 
-        //// ensure caller is in this group
+        // ensure caller is in this group
         if(!groups.count(c.name)){
             // notify sender of failure
-            successToClient(false, c.sender);
+            strToClient("send F",c.sender);
         }
 
-        //// send to all in group except caller
+        // send to all in group except caller
         for(ClientPair & pair : groups.at(c.name)->groupMembers){
             // if not sender
             if(pair.first != c.sender){
-                std::string message = c.sender + ": " + c.message;
-                MessageToClient(message, pair.first);
+                // message each recipient client
+                strToClient("message T sender "+message, pair.first);
             }
         }
 
         // notify sender of success
-        successToClient(true,c.sender);
+        strToClient("send T",c.sender);
+        // print success server
+        print_send(true, true,c.sender,c.name,message);
 
     }else{
-        //// else error
+        // else error
+
         // notify sender of failure
-        successToClient(false, c.sender);
-        // todo print failure server (?)
+        strToClient("send F",c.sender);
+        // print failure server
+        print_send(true, false,c.sender,c.name,message);
     }
 
 }
@@ -509,8 +536,14 @@ void Server::who(Command c) {
 
     std::sort(namesVec.front(), namesVec.back());
 
+    std::string list;
+
+    for(std::string name: namesVec){
+        list += name + ",";
+    }
+
     //send list to printing
-    whoToClient(namesVec, c.sender);
+    strToClient(namesVec, c.sender);
 
 
 }
@@ -536,9 +569,14 @@ void Server::clientExit(Command c){
 
 //// name legality
 
-bool Server::isLegalGroupOrClientName(std::string &name){
+bool Server::isLegalName(std::string &name){
     // ensure alphanumeric only and name not taken.
     return(isAlNumString(name) && !isClient(name) && !isGroup(name));
+}
+
+bool Server::isTakenName(std::string &name){
+    // ensure alphanumeric only and name not taken.
+    return(isClient(name) || !isGroup(name));
 }
 
 

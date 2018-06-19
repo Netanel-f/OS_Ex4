@@ -125,6 +125,7 @@ void ClientObj::handleServerReply() {
     // Who <ret_client_name_seperated_by_commas_without_spaces>
     // exit T/F
     // CONNECT T/F
+    // message T/F sender message
 
     switch (sReply.type) {
         case CREATE_GROUP:
