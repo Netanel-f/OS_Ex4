@@ -543,7 +543,7 @@ void Server::who(Command c) {
     }
 
     //send list to printing
-    strToClient(namesVec, c.sender);
+    strToClient("who "+list, c.sender);
 
 
 }
@@ -561,7 +561,7 @@ void Server::clientExit(Command c){
     //print success to server
     print_exit(true,c.sender);
     // send success to client
-    successToClient(true, c.sender);
+    strToClient("exit T ", c.sender);
 
     // remove sender from server (after reported success)
     clients.erase(c.sender);
