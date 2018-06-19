@@ -48,7 +48,7 @@ public:
     void selectPhase();
 
 private:
-    void handleServerReply();
+    bool handleServerReply();
     void handleClientRequest(std::string * userInput);
     bool validateGroupCreation(Command * command, std::string * validateCmd);
     bool validateSend(Command * command);
@@ -107,7 +107,7 @@ void ClientObj::connectToServer() {
 }
 
 
-void ClientObj::handleServerReply() {
+bool ClientObj::handleServerReply() {
     std::string incomingMsg = readFromServer();
 
     Command sReply;
@@ -117,10 +117,9 @@ void ClientObj::handleServerReply() {
 
     // send T/F
     // create_group T/F <group_name>
-    // Who <ret_client_name_separated_by_commas_without_spaces>
+    // who <ret_client_name_separated_by_commas_without_spaces>
     // exit T/F
-    // CONNECT T/F
-    // message T/F sender message
+    // message sender message
     // connect T/F/D
 
     switch (sReply.type) {
@@ -137,8 +136,7 @@ void ClientObj::handleServerReply() {
             break;
 
         case EXIT:
-            //todo handle
-            break;
+            return false;
 
         case CONNECT:
             if (replyResult) {
@@ -150,11 +148,16 @@ void ClientObj::handleServerReply() {
             }
             break;
 
+        case MESSAGE:
+            print_message(sReply.name, sReply.message);
+            break;
+
         case INVALID:
             print_invalid_input();
             break;
 
     }
+    return true; //todo examine
 }
 
 
@@ -288,11 +291,11 @@ std::string parseClientName(char * name) {
 unsigned short parseClientPort(char * port) {
     int portNumber = atoi(port);
 
-    //todo validate args!
-    if (portNumber < 0 || portNumber > 65535) {
-        print_client_usage();
-        exit(1);
-    }
+//    //todo validate args!
+//    if (portNumber < 0 || portNumber > 65535) {
+//        print_client_usage();
+//        exit(1);
+//    }
     return (unsigned short)portNumber;
 }
 
@@ -305,7 +308,8 @@ void ClientObj::selectPhase() {
     FD_SET(STDIN_FILENO, &clientsfds);
 
     int retVal;
-    while (true) {
+    bool keepLoop = true;
+    while (keepLoop) {
         readfds = clientsfds;
         retVal = select(maxSockfd + 1, &readfds, nullptr, nullptr, nullptr);
         if (retVal == -1) {
@@ -324,7 +328,7 @@ void ClientObj::selectPhase() {
         }
 
         if (FD_ISSET(this->sockfd, &readfds)) {
-            handleServerReply();
+            keepLoop = handleServerReply();
         }
     }
 }
@@ -343,6 +347,9 @@ int main(int argc, char *argv[])
 
     //// wait streams
     client.selectPhase();
+    client.~ClientObj();
+    print_exit(false, nullptr);
+    exit(0);
 
 }
 

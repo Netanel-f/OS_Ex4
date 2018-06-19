@@ -156,18 +156,18 @@ void parse_command(const std::string& command, command_type& commandT,
 }
 
 void parse_response(const std::string& serverResponse, command_type& serverResponseT,
-                    std::string& name, std::string& result, std::vector<std::string>& clients){
+                    std::string& name, std::string& message, std::vector<std::string>& clients){
     // send T/F
     // create_group T/F <group_name>
     // Who <ret_client_name_seperated_by_commas_without_spaces>
     // exit T/F
     // connect T/F/D
 
-    char sReply[WA_MAX_SERVER_RESPONSE];
+    char sReply[WA_MAX_INPUT];
     const char *s;
     char *saveptr;
     name.clear();
-    result.clear();
+    message.clear();
     clients.clear();
 
     strcpy(sReply, serverResponse.c_str());
@@ -180,7 +180,7 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
             serverResponseT = INVALID;
             return;
         } else {
-            result = s;
+            message = s;
             s = strtok_r(NULL, " ", &saveptr);
             name = s;
         }
@@ -191,21 +191,32 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
             serverResponseT = INVALID;
             return;
         } else {
-            result = s;
+            message = s;
         }
     } else if (!strcmp(s, "who")) {
         serverResponseT = WHO;
-        while ((s = strtok_r(NULL, ",", &saveptr)) != NULL) {
+        while ((s = strtok_r(NULL, ",", &saveptr)) != NULL) {   //todo check last comma
             clients.emplace_back(s);
         }
     } else if (!strcmp(s, "exit")) {
         serverResponseT = EXIT;
         s = strtok_r(NULL, " ", &saveptr);
-        result = s;
+        message = s;
     } else if (!strcmp(s, "connect")) {
         serverResponseT = CONNECT;
         s = strtok_r(NULL, " ", &saveptr);
-        result = s;
+        message = s;
+    } else if (!strcmp(s, "message")) {
+        serverResponseT = MESSAGE;
+        s = strtok_r(NULL, " ", &saveptr);
+        if (!s) {
+            serverResponseT = INVALID;
+            return;
+        } else {
+            name = s;
+            s = strtok_r(NULL, " ", &saveptr);
+            message = s;
+        }
     } else {
         serverResponseT = INVALID;
     }
