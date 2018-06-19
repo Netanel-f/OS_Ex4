@@ -100,6 +100,7 @@ private:
     //// DB queries
     bool isClient(std::string &name);
     bool isGroup(std::string &name);
+    int getMaxfd();
 
     //// request handling
     void createGroup(Command c);
@@ -357,6 +358,16 @@ bool Server::isClient(std::string &name) {
 
 bool Server::isGroup(std::string &name){
     return((bool)groups.count(name)); // (count is zero (false) if not there.
+}
+
+int Server::getMaxfd() {
+    int max = this->welcomeSocket;
+    for (auto client :clients) {
+        if (client.second->sockfd > max) {
+            max = client.second->sockfd;
+        }
+    }
+    return max;
 }
 
 
