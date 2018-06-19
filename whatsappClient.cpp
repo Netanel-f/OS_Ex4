@@ -117,7 +117,7 @@ void ClientObj::handleServerReply() {
     readFromServer(incomingMsg, msgSize);
 
     Command sReply;
-    parse_command(incomingMsg, sReply.type, sReply.name, sReply.message, sReply.clients);
+    parse_response(incomingMsg, sReply.type, sReply.name, sReply.message, sReply.clients);
 
     bool replyResult = (strcmp(sReply.message) == 0);
 
