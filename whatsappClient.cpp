@@ -237,8 +237,22 @@ bool ClientObj::validateSend(Command * command) {
 
 }
 void ClientObj::writeToServer(const std::string& command) {
-//    unsigned long cmdlen =  command.length();
+    unsigned long cmdlen =  command.length();
     const char * cmdSend = command.c_str();
+
+    int bcount = 0; /* counts bytes read */
+    int br = 0; /* bytes read this pass */
+//    char * buf[WA_MAX_INPUT];
+    while (bcount < cmdlen) { /* loop until full buffer */
+        br = read(this->sockfd, &cmdSend, cmdlen-bcount);
+        if (br > 0) {
+            bcount += br;
+//            buf += br;
+        }
+        if (br < 1) {
+            print_error("read", errno);
+        }
+    }
 
 //    ssize_t wrote = write(this->sockfd, cmdSend, cmdlen);
     ssize_t wrote = write(this->sockfd, cmdSend, WA_MAX_INPUT);
