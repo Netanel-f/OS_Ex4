@@ -35,11 +35,11 @@ struct Command
 //// ============================  Forward Declarations ===========================================
 //bool validateClientRequest(std::string * userInput);
 //bool validateGroupCreation(Command * command, std::string * senderName);
-bool validateSend(Command * command, std::string * senderName);
+//bool validateSend(Command * command, std::string * senderName);
 bool isNameValid(std::string * name);
-void requestCreateGroup(Command * command, std::string * senderName);
-void requestSend(Command * command, std::string * senderName);
-void requestWho(Command * command);
+//void requestCreateGroup(Command * command, std::string * senderName);
+//void requestSend(Command * command, std::string * senderName);
+//void requestWho(Command * command);
 void requestExit();
 void validateMainArgc(int argc, char **argv);
 void writeToSocket(int sockfd, const std::string& command);
@@ -64,12 +64,12 @@ public:
 
 private:
     void handleClientRequest(std::string * userInput);
-    bool validateGroupCreation(Command * command);
+    bool validateGroupCreation(Command * command, std::string * validateCmd);
     bool validateSend(Command * command);
-    void requestCreateGroup(Command * command);
-    void requestSend(Command * command);
-    void requestWho(Command * command);
-    void requestExit();
+//    void requestCreateGroup(Command * command);
+//    void requestSend(Command * command);
+//    void requestWho(Command * command);
+//    void requestExit();
 };
 
 ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * server) {
@@ -111,17 +111,18 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
 void ClientObj::handleClientRequest(std::string * userInput) {
     Command command;
     parse_command(*userInput, command.type, command.name, command.message, command.clients);
+    std::string validateCmd;
 
     switch (command.type) {
         case CREATE_GROUP:
-            if (this->validateGroupCreation(&command)) {
-                //todo write
+            if (this->validateGroupCreation(&command, &validateCmd)) {
+                //todo write validatedCmd
             } else { print_invalid_input(); }
             break;
 
         case SEND:
             if (this->validateSend(&command)) {
-                //todo write
+                //todo write command.command
             } else { print_invalid_input(); }
             break;
 
@@ -139,14 +140,31 @@ void ClientObj::handleClientRequest(std::string * userInput) {
     }
 }
 
-bool ClientObj::validateGroupCreation(Command * command) {
+bool ClientObj::validateGroupCreation(Command * command, std::string *validateCmd) {
     // check if name of group is valid,
+    (*validateCmd) += "create_group ";
     if(isNameValid(&(command->name))) {
+        (*validateCmd) += command->name;
+        (*validateCmd) += " ";
         if (!command->clients.empty()) {
+            std::sort(command->clients.begin(), command->clients.end());
+            auto last = std::unique(command->clients.begin(), command->clients.end());
+            command->clients.erase(last, command->clients.end());
+
+            if (command->clients.empty()) {
+                return false;
+            }
+
             bool foundOthersUsers = false;
             for (auto &clientName : command->clients) {
-                if (!isNameValid(&clientName)) { break; }
-                if (!(clientName == this->clientName)) { foundOthersUsers = true; }
+                if (!isNameValid(&clientName)) {
+                    return false;
+                }
+                if (!(clientName == this->clientName)) {
+                    foundOthersUsers = true;
+                    (*validateCmd) += clientName;
+                    (*validateCmd) += " ";
+                }
             }
 
             if (foundOthersUsers) {
@@ -160,41 +178,35 @@ bool ClientObj::validateGroupCreation(Command * command) {
 }
 
 bool ClientObj::validateSend(Command * command) {
-    if (isNameValid(&(command->name))) {
-        if (!(command->name == this->clientName)) {
-            //todo send request to server
-            return true;
-        }
-    }
+    return (command->name != this->clientName) && isNameValid(&(command->name));
     // if arrived here - one of the names is invalid
-    return false;
 }
 
-void ClientObj::requestCreateGroup(Command * command){
-    if (validateGroupCreation(command)) {
-        //todo send request to server
-        return;
-    } else {
-        print_invalid_input();
-    }
-}
-
-void ClientObj::requestSend(Command * command) {
-    if (validateSend(command)){
-        //todo send request to server
-        return;
-    } else {
-        print_invalid_input();
-    }
-}
-
-void ClientObj::requestWho(Command * command){
-    //todo send who request
-}
-void ClientObj::requestExit(){
-    //todo send exit request to server and clear client memort.
-
-}
+//void ClientObj::requestCreateGroup(Command * command){
+//    if (validateGroupCreation(command)) {
+//        //todo send request to server
+//        return;
+//    } else {
+//        print_invalid_input();
+//    }
+//}
+//
+//void ClientObj::requestSend(Command * command) {
+//    if (validateSend(command)){
+//        //todo send request to server
+//        return;
+//    } else {
+//        print_invalid_input();
+//    }
+//}
+//
+//void ClientObj::requestWho(Command * command){
+//    //todo send who request
+//}
+//void ClientObj::requestExit(){
+//    //todo send exit request to server and clear client memort.
+//
+//}
 
 //// ===========================   Global Variables ===============================================
 
