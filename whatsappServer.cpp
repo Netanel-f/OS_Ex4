@@ -96,7 +96,7 @@ private:
     void send(Command c);
     void who(Command c);
     void clientExit(Command c);
-    void registerClient(Command c);
+    void registerClient(Command c, int sockfd);
 
     //// name legality
     bool isLegalName(std::string& name);
@@ -276,7 +276,7 @@ void Server::handleClientRequest(int sockfd) {
     case WHO:who(c);
         break;
 
-    case CONNECT:registerClient(c);
+    case CONNECT:registerClient(c, sockfd);
         break;
 
     case EXIT:clientExit(c);
@@ -315,7 +315,7 @@ void Server::strToClient(const std::string& str, const std::string& clientName) 
 
 //// DB modify
 
-void Server::registerClient(Command c) {
+void Server::registerClient(Command c, int sockfd) {
 
     if (!isLegalName(c.name)) {
 
@@ -325,10 +325,8 @@ void Server::registerClient(Command c) {
         // notify failure to client
         strToClient("connect "+taken, c.name);
 
-        // todo make sure no server print
+        // todo make sure no server print is necessary
     }
-
-    int sockfd = nullptr; //todo get the sockfd
 
     Client newClient = {c.name, sockfd};
 
@@ -532,8 +530,15 @@ void Server::clientExit(Command c) {
     // send success to client
     strToClient("exit T ", c.sender);
 
+    //close sockets
+    if( close(clients[c.sender].sockfd) !=0){
+        print_error("close", errno);
+    }
+
     // remove sender from server (after reported success)
     clients.erase(c.sender);
+
+
 }
 
 //// name legality
@@ -606,5 +611,4 @@ int main(int argc, char* argv[]) {
     //// close
 
     //// --- Repeat  ---
-    //todo disconnect clients, clear memory, and exit(0)
 }
