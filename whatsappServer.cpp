@@ -25,23 +25,23 @@ static const int FUCK = 1; // todo exit val?
 
 // client
 struct Client {
-  std::string name;
-  int sockfd;
+    std::string name;
+    int sockfd;
 };
 
 // clients Group
 struct Group {
-  std::string name;
-  std::map<std::string, Client> groupMembers;
+    std::string name;
+    std::map<std::string, Client> groupMembers;
 };
 
 // command
 struct Command { //todo make init?
-  command_type type;
-  std::string name;
-  std::string message;
-  std::vector<std::string> clients;
-  std::string sender;
+    command_type type;
+    std::string name;
+    std::string message;
+    std::vector<std::string> clients;
+    std::string sender;
 };
 
 typedef std::pair<std::string, Client> ClientPair;
@@ -85,7 +85,6 @@ private:
     void prepSize(uint64_t size, Client client);
     void strToClient(const std::string& str, const std::string& clientName);
 
-
     //// DB queries
     bool isClient(std::string& name);
     bool isGroup(std::string& name);
@@ -120,8 +119,7 @@ void errCheck(int& retVal, const std::string& funcName, int successVal = 0);
 
 //// server actions
 
-void Server::Server(unsigned short portNumber)
-{
+void Server::Server(unsigned short portNumber) {
 
     char srvName[MAX_HOST_NAME_LEN+1];
     struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
@@ -157,8 +155,7 @@ void Server::Server(unsigned short portNumber)
     serverPort = portNumber;
 }
 
-void Server::selectPhase()
-{
+void Server::selectPhase() {
     fd_set clientsfds;
     fd_set readfds; //Represent a set of file descriptors.
     FD_ZERO(&clientsfds);   //Initializes the file descriptor set fdset to have zero bits for all file descriptors
@@ -209,8 +206,7 @@ void Server::selectPhase()
     }
 }
 
-int Server::connectNewClient(int welcomeSocket)
-{
+int Server::connectNewClient(int welcomeSocket) {
     int connectionSocket;
     connectionSocket = accept(welcomeSocket, nullptr, nullptr);
     if (connectionSocket<0) {
@@ -222,8 +218,7 @@ int Server::connectNewClient(int welcomeSocket)
     }
 }
 
-void Server::serverStdInput()
-{
+void Server::serverStdInput() {
     std::string serverInput;
     getline(std::cin, serverInput);
     if (serverInput=="EXIT") {
@@ -236,13 +231,13 @@ void Server::serverStdInput()
     }
 }
 
-void Server::killServer(){
+void Server::killServer() {
 
     print_exit();
 
     //close sockets
-    for(auto & pair: clients){
-        if(close(pair.second.sockfd) != 0){
+    for (auto& pair: clients) {
+        if (close(pair.second.sockfd)!=0) {
             print_error("close", errno);
         }
     }
@@ -250,8 +245,7 @@ void Server::killServer(){
 
 }
 
-void Server::handleClientRequest(int sockfd)
-{
+void Server::handleClientRequest(int sockfd) {
     // get socket (may be unregistered)
     Client client = clientByfd(sockfd);
 
@@ -297,8 +291,7 @@ void Server::handleClientRequest(int sockfd)
 
 //// send/recv
 
-void Server::prepSize(uint64_t size, Client client)
-{
+void Server::prepSize(uint64_t size, Client client) {
     uint64_t datalen = size;
     ssize_t written = write(client.sockfd, &datalen, sizeof(uint64_t));
     if (written!=c.sender.size()) {
@@ -306,8 +299,7 @@ void Server::prepSize(uint64_t size, Client client)
     }
 }
 
-void Server::strToClient(const std::string& str, const std::string& clientName)
-{
+void Server::strToClient(const std::string& str, const std::string& clientName) {
     Client client = clients[clientName];
 
     // send string size
@@ -323,8 +315,7 @@ void Server::strToClient(const std::string& str, const std::string& clientName)
 
 //// DB modify
 
-void Server::registerClient(Command c)
-{
+void Server::registerClient(Command c) {
 
     if (!isLegalName(c.name)) {
 
@@ -353,18 +344,15 @@ void Server::registerClient(Command c)
 
 //// DB queries
 
-bool Server::isClient(std::string& name)
-{
+bool Server::isClient(std::string& name) {
     return ((bool) clients.count(name)); // (count is zero (false) if not there.
 }
 
-bool Server::isGroup(std::string& name)
-{
+bool Server::isGroup(std::string& name) {
     return ((bool) groups.count(name)); // (count is zero (false) if not there.
 }
 
-int Server::getMaxfd()
-{
+int Server::getMaxfd() {
     int max = this->welcomeSocket;
     for (auto client :clients) {
         if (client.second.sockfd>max) {
@@ -374,14 +362,13 @@ int Server::getMaxfd()
     return max;
 }
 
-// todo make map by sockfd
-Client Server::clientByfd(int sockfd)
-{
+// todo (improvement) make client map by sockfd
+Client Server::clientByfd(int sockfd) {
     // give sockfd back so that register works in any case
     Client unregistered{"not_registered", sockfd};
 
-    for(auto& pair: clients){
-        if(pair.second.sockfd == sockfd){
+    for (auto& pair: clients) {
+        if (pair.second.sockfd==sockfd) {
             return pair.second;
         }
     }
@@ -392,8 +379,7 @@ Client Server::clientByfd(int sockfd)
 
 //// request handling
 
-void Server::createGroup(Command c)
-{
+void Server::createGroup(Command c) {
 
     // ensure group name legal & unique (not taken)
     if (!isLegalName(c.name)) {
@@ -452,8 +438,7 @@ void Server::createGroup(Command c)
 
 }
 
-void Server::send(Command c)
-{
+void Server::send(Command c) {
 
     std::string message = c.sender+": "+c.message;
 
@@ -510,8 +495,7 @@ void Server::send(Command c)
 
 }
 
-void Server::who(Command c)
-{
+void Server::who(Command c) {
     //// order and return names
     std::vector<std::string> namesVec;
 
@@ -533,8 +517,7 @@ void Server::who(Command c)
 
 }
 
-void Server::clientExit(Command c)
-{
+void Server::clientExit(Command c) {
 
     // remove sender from all groups
     for (auto& pair : groups) {
@@ -555,20 +538,17 @@ void Server::clientExit(Command c)
 
 //// name legality
 
-bool Server::isLegalName(std::string& name)
-{
+bool Server::isLegalName(std::string& name) {
     // ensure alphanumeric only and name not taken.
     return (isAlNumString(name) && !isClient(name) && !isGroup(name));
 }
 
-bool Server::isTakenName(std::string& name)
-{
+bool Server::isTakenName(std::string& name) {
     // ensure alphanumeric only and name not taken.
     return (isClient(name) || !isGroup(name));
 }
 
-bool Server::isAlNumString(std::string& str)
-{
+bool Server::isAlNumString(std::string& str) {
     for (char c: str) {
         if (!isalnum(c)) return false;
     }
@@ -579,8 +559,7 @@ bool Server::isAlNumString(std::string& str)
 //// ===============================  Helper Functions ============================================
 
 //// input checking
-int parsePortNum(int argc, char** argv)
-{
+int parsePortNum(int argc, char** argv) {
 
     //// check args
     if (argc!=2) {
@@ -601,8 +580,7 @@ int parsePortNum(int argc, char** argv)
 
 //// =============================== Main Function ================================================
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
 
     //// --- Init  ---
     int portNumber = parsePortNum(argc, argv);
