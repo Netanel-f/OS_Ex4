@@ -99,7 +99,7 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
 }
 
 void ClientObj::connectToServer() {
-    std::string cmd = "connect ";   //todo fix parse_command to support CONNECT
+    std::string cmd = "connect ";
     cmd += this->clientName;
     writeToServer(cmd);
 }

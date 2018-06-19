@@ -141,6 +141,15 @@ void parse_command(const std::string& command, command_type& commandT,
         commandT = WHO;
     } else if (!strcmp(s, "exit")) {
         commandT = EXIT;
+    } else if (!strcmp(s, "connect")) {
+        commandT = CONNECT;
+        s = strtok_r(NULL, " ", &saveptr);
+        if (!s) {
+            commandT = INVALID;
+            return;
+        } else {
+            name = s;
+        }
     } else {
         commandT = INVALID;
     }
