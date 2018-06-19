@@ -15,13 +15,6 @@
 
 //// ===========================   Typedefs & Structs =============================================
 
-// client
-struct Client   //todo remove
-{
-    std::string name;
-    int sockfd;
-};
-
 // command
 struct Command
 {
@@ -33,16 +26,8 @@ struct Command
 };
 
 //// ============================  Forward Declarations ===========================================
-//bool validateClientRequest(std::string * userInput);
-//bool validateGroupCreation(Command * command, std::string * senderName);
-//bool validateSend(Command * command, std::string * senderName);
 bool isNameValid(std::string * name);
-//void requestCreateGroup(Command * command, std::string * senderName);
-//void requestSend(Command * command, std::string * senderName);
-//void requestWho(Command * command);
-void requestExit();
 void validateMainArgc(int argc, char **argv);
-void writeToSocket(int sockfd, const std::string& command);
 std::string parseClientName(char * name);
 unsigned short parseClientPort(char * port);
 
@@ -60,18 +45,26 @@ public:
     explicit void ClientObj(const std::string &clientName, unsigned short port, char * server);
 
     //// client actions
+    void connectToServer();
     void selectPhase();
 
 private:
+    void handleServerReply();
     void handleClientRequest(std::string * userInput);
     bool validateGroupCreation(Command * command, std::string * validateCmd);
     bool validateSend(Command * command);
-//    void requestCreateGroup(Command * command);
-//    void requestSend(Command * command);
-//    void requestWho(Command * command);
-//    void requestExit();
+    void writeToServer(const std::string& command);
+    int readFromServer(char *buf, int n);
+
 };
 
+
+/**
+ * Constructing client object - including creating and connecting the socket for server.
+ * @param clientName validated client name
+ * @param port validated port number
+ * @param server ip address
+ */
 ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * server) {
     struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
     struct hostent * hostEnt;
@@ -97,16 +90,72 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
     int retVal = connect(sockfd, (struct sockaddr*)&sa, sizeof(sa));
     if (retVal < 0) {
         print_error("connect", errno);
-        //todo close socket
+        close(sockfd);
+        exit(1);
     }
     if (sockfd > STDIN_FILENO) {
         maxSockfd = sockfd;
     } else {
         maxSockfd = STDIN_FILENO;
     }
-    //todo send name to actually register.
-    print_connection(); //todo check first server reply
 }
+
+void ClientObj::connectToServer() {
+    std::string cmd = "CONNECT ";
+    cmd += this->clientName;
+    writeToServer(cmd);
+}
+
+
+void ClientObj::handleServerReply() {
+    char buffer[4]; //todo supporting 4digits length of msg
+    bzero(buffer, 4);
+    readFromServer(buffer, 4);
+
+    int msgSize = atoi(buffer);
+    char incomingMsg[msgSize];
+    readFromServer(incomingMsg, msgSize);
+
+    Command sReply;
+    parse_response(incomingMsg, sReply.type, sReply.name, sReply.message, sReply.clients);
+
+    bool replyResult = (strcmp(sReply.message) == 0);
+
+    // send T/F
+    // create_group T/F <group_name>
+    // Who <ret_client_name_seperated_by_commas_without_spaces>
+    // exit T/F
+
+    switch (sReply.type) {
+        case CREATE_GROUP:
+            print_create_group(false, replyResult, nullptr, sReply.name);
+            break;
+
+        case SEND:
+            print_send(false, replyResult, nullptr, nullptr, nullptr);
+            break;
+
+        case WHO:
+            print_who_client(replyResult, sReply.clients);
+            break;
+
+        case EXIT:
+            //todo handle
+            break;
+
+        case INVALID:
+        case CONNECT:
+
+            print_invalid_input();
+
+    }
+
+    //todo n: need to implement
+
+    //print_connection(); //todo check first server reply
+}
+
+
 
 void ClientObj::handleClientRequest(std::string * userInput) {
     Command command;
@@ -115,28 +164,26 @@ void ClientObj::handleClientRequest(std::string * userInput) {
 
     switch (command.type) {
         case CREATE_GROUP:
-            if (this->validateGroupCreation(&command, &validateCmd)) {
-                //todo write validatedCmd
-            } else { print_invalid_input(); }
+            if (this->validateGroupCreation(&command, &validateCmd)) { writeToServer(validateCmd); }
             break;
 
         case SEND:
-            if (this->validateSend(&command)) {
-                //todo write command.command
-            } else { print_invalid_input(); }
+            if (this->validateSend(&command)) { writeToServer(command.command); }
             break;
 
         case WHO:
-            //todo write
+            writeToServer(command.command);
             break;
 
         case EXIT:
-            //todo write
-            //exit
+            writeToServer(command.command);
+            break;
 
         case INVALID:
-            print_invalid_input();
-            break;
+        case CONNECT:
+
+    print_invalid_input();
+
     }
 }
 
@@ -182,31 +229,30 @@ bool ClientObj::validateSend(Command * command) {
     // if arrived here - one of the names is invalid
 }
 
-//void ClientObj::requestCreateGroup(Command * command){
-//    if (validateGroupCreation(command)) {
-//        //todo send request to server
-//        return;
-//    } else {
-//        print_invalid_input();
-//    }
-//}
-//
-//void ClientObj::requestSend(Command * command) {
-//    if (validateSend(command)){
-//        //todo send request to server
-//        return;
-//    } else {
-//        print_invalid_input();
-//    }
-//}
-//
-//void ClientObj::requestWho(Command * command){
-//    //todo send who request
-//}
-//void ClientObj::requestExit(){
-//    //todo send exit request to server and clear client memort.
-//
-//}
+void ClientObj::writeToServer(const std::string& command) {
+    size_t cmdlen = command.length();
+    ssize_t wrote = write(this->sockfd, &command, cmdlen);
+    if (wrote < 0) {
+        print_error("write", errno);
+    }
+}
+
+int ClientObj::readFromServer(char * buf, int n) {
+    int bcount = 0; /* counts bytes read */
+    int br = 0; /* bytes read this pass */
+
+    while (bcount < n) { /* loop until full buffer */
+        br = read(this->sockfd, buf, n-bcount);
+        if (br > 0) {
+            bcount += br;
+            buf += br;
+        }
+        if (br < 1) {
+            print_error("read", errno);
+        }
+    }
+    return(bcount);
+}
 
 //// ===========================   Global Variables ===============================================
 
@@ -269,6 +315,10 @@ void ClientObj::selectPhase() {
             getline(std::cin, userInput);//todo 22:29
             handleClientRequest(&userInput);
         }
+
+        if (FD_ISSET(this->sockfd, &readfds)) {
+            handleServerReply();
+        }
     }
 }
 
@@ -281,6 +331,8 @@ int main(int argc, char *argv[])
 
     // Constructing client - create socket, connect socket.
     ClientObj client = ClientObj(clientName, clientPort, argv[2]);
+    client.connectToServer();
+
 
     //// wait streams
     client.selectPhase();

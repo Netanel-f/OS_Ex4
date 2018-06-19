@@ -106,42 +106,95 @@ void parse_command(const std::string& command, command_type& commandT,
                    std::string& name, std::string& message, 
                    std::vector<std::string>& clients) {
     char c[WA_MAX_INPUT];
-    const char *s; 
+    const char *s;
     char *saveptr;
     name.clear();
     message.clear();
     clients.clear();
-    
+
     strcpy(c, command.c_str());
     s = strtok_r(c, " ", &saveptr);
-    
-    if(!strcmp(s, "create_group")) {
+
+    if (!strcmp(s, "create_group")) {
         commandT = CREATE_GROUP;
         s = strtok_r(NULL, " ", &saveptr);
-        if(!s) {
+        if (!s) {
             commandT = INVALID;
             return;
         } else {
             name = s;
-            while((s = strtok_r(NULL, ",", &saveptr)) != NULL) {
+            while ((s = strtok_r(NULL, ",", &saveptr)) != NULL) {
                 clients.emplace_back(s);
             }
         }
-    } else if(!strcmp(s, "send")) {
+    } else if (!strcmp(s, "send")) {
         commandT = SEND;
         s = strtok_r(NULL, " ", &saveptr);
-        if(!s) {
+        if (!s) {
             commandT = INVALID;
             return;
         } else {
             name = s;
             message = command.substr(name.size() + 6); // 6 = 2 spaces + "send"
         }
-    } else if(!strcmp(s, "who")) {
+    } else if (!strcmp(s, "who")) {
         commandT = WHO;
-    } else if(!strcmp(s, "exit")) {
+    } else if (!strcmp(s, "exit")) {
         commandT = EXIT;
     } else {
         commandT = INVALID;
+    }
+}
+
+//void parse_response(const std::string& response, command_type& responseT,
+//                    bool &requestResult, std::string& name, std::string& clients){
+void parse_response(const std::string& serverResponse, command_type& serverResponseT,
+                    std::string& name, std::string& result, std::vector<std::string>& clients){
+    // send T/F
+    // create_group T/F <group_name>
+    // Who <ret_client_name_seperated_by_commas_without_spaces>
+    // exit T/F
+
+    char sReply[WA_MAX_SERVER_RESPONSE];
+    const char *s;
+    char *saveptr;
+    name.clear();
+    result.clear();
+    clients.clear();
+
+    strcpy(sReply, serverResponse.c_str());
+    s = strtok_r(sReply, " ", &saveptr);
+
+    if (!strcmp(s, "create_group")) {
+        serverResponseT = CREATE_GROUP;
+        s = strtok_r(NULL, " ", &saveptr);
+        if (!s) {
+            serverResponseT = INVALID;
+            return;
+        } else {
+            result = s;
+            s = strtok_r(NULL, " ", &saveptr);
+            name = s;
+        }
+    } else if (!strcmp(s, "send")) {
+        serverResponseT = SEND;
+        s = strtok_r(NULL, " ", &saveptr);
+        if (!s) {
+            serverResponseT = INVALID;
+            return;
+        } else {
+            result = s;
+        }
+    } else if (!strcmp(s, "who")) {
+        serverResponseT = WHO;
+        while ((s = strtok_r(NULL, ",", &saveptr)) != NULL) {
+            clients.emplace_back(s);
+        }
+    } else if (!strcmp(s, "exit")) {
+        serverResponseT = EXIT;
+        s = strtok_r(NULL, " ", &saveptr);
+        name = s;
+    } else {
+        serverResponseT = INVALID;
     }
 }

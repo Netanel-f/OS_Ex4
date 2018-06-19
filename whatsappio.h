@@ -9,8 +9,9 @@
 #define WA_MAX_MESSAGE 256
 #define WA_MAX_GROUP 50
 #define WA_MAX_INPUT ((WA_MAX_NAME+1)*(WA_MAX_GROUP+2))
+#define WA_MAX_SERVER_RESPONSE 9999
 
-enum command_type {CREATE_GROUP, SEND, WHO, EXIT, INVALID};
+enum command_type {CONNECT, CREATE_GROUP, SEND, WHO, EXIT, INVALID};//todo
 
 /*
  * Description: Prints to the screen a message when the user terminate the
@@ -111,6 +112,7 @@ void print_error(const std::string& function_name, int error_number);
  * message: The message
  * clients: a vector containing the names of all clients
 */
-void parse_command(const std::string& command, command_type& commandT, std::string& name, std::string& messsage, std::vector<std::string>& clients);
+void parse_command(const std::string& command, command_type& commandT, std::string& name, std::string& message, std::vector<std::string>& clients);
+void parse_response(const std::string& command, command_type& commandT, std::string& name, std::string& message, std::vector<std::string>& clients);
 
 #endif
