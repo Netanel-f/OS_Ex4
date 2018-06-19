@@ -27,7 +27,6 @@ struct Command
 
 //// ============================  Forward Declarations ===========================================
 bool isNameValid(std::string * name);
-void validateMainArgc(int argc, char **argv);
 std::string parseClientName(char * name);
 unsigned short parseClientPort(char * port);
 
@@ -52,9 +51,8 @@ private:
     void handleServerReply();
     void handleClientRequest(std::string * userInput);
     bool validateGroupCreation(Command * command, std::string * validateCmd);
-    bool validateSend(Command * command);
     void writeToServer(const std::string& command);
-    int readFromServer(char *buf, int n);
+    int readFromServer(char * buf, int n);
 
 };
 
@@ -101,17 +99,18 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
 }
 
 void ClientObj::connectToServer() {
-    std::string cmd = "CONNECT ";
+    std::string cmd = "connect ";   //todo fix parse_command to support CONNECT
     cmd += this->clientName;
     writeToServer(cmd);
 }
 
 
 void ClientObj::handleServerReply() {
+//    uint64_t msgSize;
     char buffer[4]; //todo supporting 4digits length of msg
     bzero(buffer, 4);
     readFromServer(buffer, 4);
-
+//
     int msgSize = atoi(buffer);
     char incomingMsg[msgSize];
     readFromServer(incomingMsg, msgSize);
@@ -125,6 +124,7 @@ void ClientObj::handleServerReply() {
     // create_group T/F <group_name>
     // Who <ret_client_name_seperated_by_commas_without_spaces>
     // exit T/F
+    // CONNECT T/F
 
     switch (sReply.type) {
         case CREATE_GROUP:
@@ -143,16 +143,19 @@ void ClientObj::handleServerReply() {
             //todo handle
             break;
 
-        case INVALID:
         case CONNECT:
+            if (replyResult) {
+                print_connection();
+            } else {
+                print_fail_connection();
+            }
+            break;
 
+        case INVALID:
             print_invalid_input();
+            break;
 
     }
-
-    //todo n: need to implement
-
-    //print_connection(); //todo check first server reply
 }
 
 
@@ -164,11 +167,15 @@ void ClientObj::handleClientRequest(std::string * userInput) {
 
     switch (command.type) {
         case CREATE_GROUP:
-            if (this->validateGroupCreation(&command, &validateCmd)) { writeToServer(validateCmd); }
+            if (this->validateGroupCreation(&command, &validateCmd)) {
+                writeToServer(validateCmd);
+            }
             break;
 
         case SEND:
-            if (this->validateSend(&command)) { writeToServer(command.command); }
+            if ((command.name != this->clientName) && isNameValid(&(command.name))) {
+                writeToServer(command.command);
+            }
             break;
 
         case WHO:
@@ -194,6 +201,8 @@ bool ClientObj::validateGroupCreation(Command * command, std::string *validateCm
         (*validateCmd) += command->name;
         (*validateCmd) += " ";
         if (!command->clients.empty()) {
+
+            // deleting duplicated clients name.
             std::sort(command->clients.begin(), command->clients.end());
             auto last = std::unique(command->clients.begin(), command->clients.end());
             command->clients.erase(last, command->clients.end());
@@ -214,19 +223,10 @@ bool ClientObj::validateGroupCreation(Command * command, std::string *validateCm
                 }
             }
 
-            if (foundOthersUsers) {
-                return true;
-            }
+            return foundOthersUsers;
         }
-    }
-
-    // if arrived here - one of the names is invalid
+    }   // if arrived here - one of the names is invalid
     return false;
-}
-
-bool ClientObj::validateSend(Command * command) {
-    return (command->name != this->clientName) && isNameValid(&(command->name));
-    // if arrived here - one of the names is invalid
 }
 
 void ClientObj::writeToServer(const std::string& command) {
@@ -292,9 +292,7 @@ void ClientObj::selectPhase() {
     fd_set readfds; //Represent a set of file descriptors.
     FD_ZERO(&clientsfds);   //Initializes the file descriptor set fdset to have zero bits for all file descriptors
 
-    FD_SET(this->sockfd,
-           &clientsfds);  //Sets the bit for the file descriptor fd in the file descriptor set fdset.
-
+    FD_SET(this->sockfd, &clientsfds);  //Sets the bit for the file descriptor fd in the file descriptor set fdset.
     FD_SET(STDIN_FILENO, &clientsfds);
 
     int retVal;
@@ -312,7 +310,7 @@ void ClientObj::selectPhase() {
         if (FD_ISSET(STDIN_FILENO, &readfds)) {
             //msg from stdin
             std::string userInput;
-            getline(std::cin, userInput);//todo 22:29
+            getline(std::cin, userInput);
             handleClientRequest(&userInput);
         }
 
