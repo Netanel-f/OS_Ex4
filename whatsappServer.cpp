@@ -126,13 +126,16 @@ void Server::Server(unsigned short portNumber) {
     struct hostent* hostEnt;
 
     int retVal = gethostname(srvName, MAX_HOST_NAME_LEN);
-    if (retVal<0) { print_error("gethostname", errno); }
+    if (retVal<0) {
+        print_error("gethostname", errno);
+        exit(FUCK); //todo should we exit?
+    }
 
     bzero(&sa, sizeof(struct sockaddr_in));
     hostEnt = gethostbyname(srvName);
     if (hostEnt==nullptr) {
         print_error("gethostbyname", errno);
-        //todo should we exit?
+        exit(FUCK); //todo should we exit?
     }
 
     memset(&sa, 0, sizeof(struct sockaddr_in));
@@ -198,7 +201,7 @@ void Server::selectPhase() {
         }
 
         else {
-            //will check each client if it’s in readfds /todo what does this mean
+            //will check each client if it’s in readfds /todo what does this mean??
             //and then receive a message from him
             handleClientRequest(); // todo give sockfd
         }
@@ -531,13 +534,12 @@ void Server::clientExit(Command c) {
     strToClient("exit T ", c.sender);
 
     //close sockets
-    if( close(clients[c.sender].sockfd) !=0){
+    if (close(clients[c.sender].sockfd)!=0) {
         print_error("close", errno);
     }
 
     // remove sender from server (after reported success)
     clients.erase(c.sender);
-
 
 }
 
