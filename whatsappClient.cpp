@@ -118,13 +118,13 @@ void ClientObj::handleServerReply() {
     Command sReply;
     parse_response(incomingMsg, sReply.type, sReply.name, sReply.message, sReply.clients);
 
-    bool replyResult = (strcmp(sReply.message) == 0);
+    bool replyResult = (strcmp(sReply.message) == "T");
 
     // send T/F
     // create_group T/F <group_name>
-    // Who <ret_client_name_seperated_by_commas_without_spaces>
+    // Who <ret_client_name_separated_by_commas_without_spaces>
     // exit T/F
-    // CONNECT T/F
+    // connect T/F/D
 
     switch (sReply.type) {
         case CREATE_GROUP:
@@ -146,6 +146,8 @@ void ClientObj::handleServerReply() {
         case CONNECT:
             if (replyResult) {
                 print_connection();
+            } else if (strcmp(sReply.message) == "D"){
+                print_dup_connection();
             } else {
                 print_fail_connection();
             }
