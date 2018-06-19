@@ -34,7 +34,7 @@ struct Client {
 // clients Group
 struct Group {
   std::string name;
-  std::map<std::string, Client *> groupMembers;
+  std::map<std::string, Client> groupMembers;
 };
 
 // command
@@ -49,8 +49,8 @@ struct Command { //todo make init?
 
 
 
-typedef std::pair<std::string, Client *> ClientPair;
-typedef std::pair<std::string, Group *> GroupPair;
+typedef std::pair<std::string, Client> ClientPair;
+typedef std::pair<std::string, Group> GroupPair;
 
 
 ////todo  ===========================   todos ===============================================
@@ -72,8 +72,8 @@ class Server{
     std::string commandStr;
     Command c;
 
-    std::map<std::string, Client *> clients;
-    std::map<std::string, Group *> groups;
+    std::map<std::string, Client> clients;
+    std::map<std::string, Group> groups;
 
 public:
 
@@ -86,11 +86,10 @@ public:
     void serverStdInput();
     void handleClientRequest();
 
-//// DB modify
 private:
-    //// send/recv
-    void prepSize(uint64_t size, Client *client);
 
+    //// send/recv
+    void prepSize(uint64_t size, Client client);
     void strToClient(const std::string& str, const std::string &clientName);
 
     //// DB modify
@@ -191,7 +190,7 @@ void Server::selectPhase() {
         //Returns a non-zero value if the bit for the file descriptor fd is set in the file descriptor set pointed to by fdset, and 0 otherwise
         if (FD_ISSET(welcomeSocket, &readfds)) {
             //will also add the client to the clientsfds
-//            int connectionSocket = connectNewClient(welcomeSocket);
+//          int connectionSocket = connectNewClient(welcomeSocket);
             int connectionSocket = accept(welcomeSocket, nullptr, nullptr);
             if (connectionSocket < 0) {
                 print_error("accept", errno);
@@ -242,17 +241,17 @@ void Server::handleClientRequest(){
 
     // todo get the socket for calling client
 
-    Client* client;
+    Client client;
 
     int64_t msgLen;
 
-    ssize_t n = read(client->sockfd, &msgLen, sizeof(msgLen));
+    ssize_t n = read(client.sockfd, &msgLen, sizeof(msgLen));
     if(n<0){
         print_error("read", errno);
     }
 
     // read string from command
-    n = read(client->sockfd, &commandStr, msgLen);
+    n = read(client.sockfd, &commandStr, msgLen);
     if(n<0){
         print_error("read", errno);
     }
@@ -260,24 +259,30 @@ void Server::handleClientRequest(){
     // todo clear old command ?
 
     parse_command(commandStr, c.type, c.name, c.message, c.clients);
-    c.sender = client->name;
+    c.sender = client.name;
 
     switch (c.type) {
-        case CREATE_GROUP:createGroup(c);
+        case CREATE_GROUP:
+            createGroup(c);
             break;
 
-        case SEND:send(c);
+        case SEND:
+            send(c);
             break;
 
-        case WHO:who(c);
+        case WHO:
+            who(c);
             break;
 
+        case CONNECT:
+            break;
         case EXIT:clientExit(c);
             break;
 
         case INVALID:
             print_invalid_input();
             break;
+
     }
 
 
@@ -285,74 +290,26 @@ void Server::handleClientRequest(){
 
 //// send/recv
 
-void Server::prepSize(uint64_t size, Client *client){
+void Server::prepSize(uint64_t size, Client client){
     uint64_t datalen = size;
-    ssize_t written = write(client->sockfd, &datalen, sizeof(uint64_t));
+    ssize_t written = write(client.sockfd, &datalen, sizeof(uint64_t));
     if(written != c.sender.size()){
         print_error("write", errno);
     }
 }
 
 void Server::strToClient(const std::string& str, const std::string &clientName){
-    Client *client = clients[clientName];
+    Client client = clients[clientName];
 
     // send string size
     prepSize(str.size(), client);
 
     // send string
-    ssize_t written = write(client->sockfd, &str, str.size());
+    ssize_t written = write(client.sockfd, &str, str.size());
     if(written != str.size()){ //todo J is correct error checking?
         print_error("write", errno);
     }
 }
-
-
-//void Server::MessageToClient(std::string message, const std::string &clientName){
-//    Client *client = clients[clientName];
-//
-//    // send sender name size
-//    prepSize(c.sender.size(), client);
-//
-//    //send sender name
-//    ssize_t written = write(client->sockfd, &c.sender, c.sender.size());
-//    if(written != c.sender.size()){
-//        print_error("write", errno);
-//    }
-//
-//    // send message size
-//    prepSize(message.size(), client);
-//
-//    // send message
-//    written = write(client->sockfd, &message, message.size());
-//    if(written != message.size()){
-//        print_error("write", errno);
-//    }
-//}
-//
-//void Server::successToClient(bool success, const std::string &clientName){
-//    Client *client = clients[clientName];
-//
-//    // send bool
-//    ssize_t written = write(client->sockfd, &success, sizeof(success));
-//    if(written != sizeof(success)){
-//        print_error("write", errno);
-//    }
-//}
-
-//void Server::whoToClient(std::vector<std::string> sortedVec, const std::string &clientName){
-//    Client *client = clients[clientName];
-//
-//    //send vec size
-//    prepSize(sortedVec.size(), client);
-//
-//    //send vec
-//    ssize_t written = write(client->sockfd, &sortedVec, sortedVec.size());
-//    if(written != sortedVec.size()){
-//        print_error("write", errno);
-//    }
-//
-//}
-
 
 
 //// DB modify
@@ -372,9 +329,9 @@ void Server::registerClient(std::string &name) { //todo call this func
 
     int sockfd = nullptr; //todo get the sockfd
 
-    Client newClient{name, sockfd}; //todo is this valid creation (scope?)
+    Client newClient = {name, sockfd};
 
-    clients.insert(ClientPair(name, &newClient));  //todo is this valid creation (scope?)
+    clients[name] = newClient;
 
     // print success on server
     printf("%s: Connected Successfully.\n", name);
@@ -397,8 +354,8 @@ bool Server::isGroup(std::string &name){
 int Server::getMaxfd() {
     int max = this->welcomeSocket;
     for (auto client :clients) {
-        if (client.second->sockfd > max) {
-            max = client.second->sockfd;
+        if (client.second.sockfd > max) {
+            max = client.second.sockfd;
         }
     }
     return max;
@@ -440,12 +397,12 @@ void Server::createGroup(Command c) {
             }
 
             //add it to group
-            newGroup.groupMembers.insert(ClientPair(strName, clients.at(strName)));
+            newGroup.groupMembers[strName] = clients[strName];
         }
     }
 
     // add sender to set even if unspecified
-    newGroup.groupMembers.insert(ClientPair(c.sender, clients.at(c.sender)));
+    newGroup.groupMembers[c.sender] = clients[c.sender];
 
     // ensure group has at least 2 members (including creating client)
     if(newGroup.groupMembers.size() < 2){
@@ -457,8 +414,7 @@ void Server::createGroup(Command c) {
     }
 
     // add this group to DB
-    groups.emplace(GroupPair(newGroup.name, &newGroup));
-
+    groups[newGroup.name] = newGroup;
 
     //print success on server
     print_create_group(true, true, c.sender, c.name);
@@ -481,7 +437,7 @@ void Server::send(Command c) {
         }
 
         // message the recipient client
-        strToClient("message T sender "+message, c.name);
+        strToClient("message sender "+message, c.name);
 
         // notify sender of success
         strToClient("send T",c.sender);
@@ -499,11 +455,11 @@ void Server::send(Command c) {
         }
 
         // send to all in group except caller
-        for(ClientPair & pair : groups.at(c.name)->groupMembers){
+        for(std::pair & pair : groups.at(c.name).groupMembers){
             // if not sender
             if(pair.first != c.sender){
                 // message each recipient client
-                strToClient("message T sender "+message, pair.first);
+                strToClient("message sender "+message, pair.first);
             }
         }
 
@@ -528,7 +484,7 @@ void Server::who(Command c) {
     std::vector<std::string> namesVec;
 
     // get all names
-    for(ClientPair & pair : clients){
+    for(std::pair & pair : clients){
         namesVec.push_back(pair.first);
     }
 
@@ -549,11 +505,11 @@ void Server::who(Command c) {
 void Server::clientExit(Command c){
 
     // remove sender from all groups
-    for(GroupPair & pair : groups){
+    for(auto & pair : groups){
 
         // remove sender from members of group (if he is there)
-        Group *group = pair.second;
-        group->groupMembers.erase(c.sender);
+        Group group = pair.second;
+        group.groupMembers.erase(c.sender);
     }
 
     //print success to server
@@ -607,28 +563,6 @@ int parsePortNum(int argc, char **argv){
     return portNumber;
 }
 
-
-//// errors
-
-/**
- * Checks for failure of library functions, and handling them when they occur.
- * @param retVal
- * @param funcName Name of function
- * @param successVal value given for success (default is 0)
- */
-void errCheck(int &retVal, const std::string &funcName, int successVal = 0) {
-
-    // if no failure, return
-    if (retVal == successVal) return;
-
-    // set prefix
-    print_error(funcName, errno); // todo J is this what is meant by error number?
-
-    // exit
-    exit(FUCK);
-}
-//todo N: maybe will chaging the errcheck to just print the error.
-//todo N: errors can be -1 / 0 / nullprt
 
 //// =============================== Main Function ================================================
 
