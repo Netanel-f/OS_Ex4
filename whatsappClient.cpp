@@ -51,6 +51,7 @@ private:
     void handleServerReply();
     void handleClientRequest(std::string * userInput);
     bool validateGroupCreation(Command * command, std::string * validateCmd);
+    bool validateSend(Command * command);
     void writeToServer(const std::string& command);
 //    int readFromServer(char * buf, int n);
     std::string readFromServer();
@@ -169,7 +170,7 @@ void ClientObj::handleClientRequest(std::string * userInput) {
             break;
 
         case SEND:
-            if ((command.name != this->clientName) && isNameValid(&(command.name))) {
+            if (validateSend(&command)) {
                 writeToServer(command.command);
             }
             break;
@@ -203,7 +204,7 @@ bool ClientObj::validateGroupCreation(Command * command, std::string *validateCm
             auto last = std::unique(command->clients.begin(), command->clients.end());
             command->clients.erase(last, command->clients.end());
 
-            if (command->clients.empty()) {
+            if (command->clients.empty() || command->clients.size() > WA_MAX_GROUP) {
                 return false;
             }
 
@@ -225,6 +226,11 @@ bool ClientObj::validateGroupCreation(Command * command, std::string *validateCm
     return false;
 }
 
+bool ClientObj::validateSend(Command * command) {
+    return ((command->name != this->clientName) && isNameValid(&(command->name))
+        && (command->message.size() <= WA_MAX_MESSAGE));
+
+}
 void ClientObj::writeToServer(const std::string& command) {
 //    unsigned long cmdlen =  command.length();
     const char * cmdSend = command.c_str();
