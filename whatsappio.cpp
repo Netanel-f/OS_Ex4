@@ -146,14 +146,13 @@ void parse_command(const std::string& command, command_type& commandT,
     }
 }
 
-//void parse_response(const std::string& response, command_type& responseT,
-//                    bool &requestResult, std::string& name, std::string& clients){
 void parse_response(const std::string& serverResponse, command_type& serverResponseT,
                     std::string& name, std::string& result, std::vector<std::string>& clients){
     // send T/F
     // create_group T/F <group_name>
     // Who <ret_client_name_seperated_by_commas_without_spaces>
     // exit T/F
+    // CONNECT T/F
 
     char sReply[WA_MAX_SERVER_RESPONSE];
     const char *s;
@@ -193,7 +192,11 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
     } else if (!strcmp(s, "exit")) {
         serverResponseT = EXIT;
         s = strtok_r(NULL, " ", &saveptr);
-        name = s;
+        result = s;
+    } else if (!strcmp(s, "connect")) {
+        serverResponseT = CONNECT;
+        s = strtok_r(NULL, " ", &saveptr);
+        result = s;
     } else {
         serverResponseT = INVALID;
     }
