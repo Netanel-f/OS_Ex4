@@ -92,8 +92,6 @@ private:
     void prepSize(uint64_t size, Client *client);
 
     void strToClient(const std::string& str, const std::string &clientName);
-    void MessageToClient(const std::string& message, const std::string &senderName,
-                         const std::string &recieverName);
 
     //// DB modify
     void registerClient(std::string &name);
@@ -301,7 +299,7 @@ void Server::strToClient(const std::string& str, const std::string &clientName){
     // send string size
     prepSize(str.size(), client);
 
-    // send message
+    // send string
     ssize_t written = write(client->sockfd, &str, str.size());
     if(written != str.size()){ //todo J is correct error checking?
         print_error("write", errno);
