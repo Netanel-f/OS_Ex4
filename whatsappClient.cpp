@@ -52,7 +52,7 @@ private:
     void handleClientRequest(std::string * userInput);
     bool validateGroupCreation(Command * command, std::string * validateCmd);
     void writeToServer(const std::string& command);
-    int readFromServer(char * buf, int n);
+    void readFromServer(char * buf, int n);
 
 };
 
@@ -107,11 +107,14 @@ void ClientObj::connectToServer() {
 
 void ClientObj::handleServerReply() {
 //    uint64_t msgSize;
-    char buffer[4]; //todo supporting 4digits length of msg
-    bzero(buffer, 4);
-    readFromServer(buffer, 4);
+//    read(this->sockfd, &msgSize, sizeof(uint64_t));
+    int msgSize;
+    readFromServer((char*)&msgSize, sizeof(msgSize));
+//    char buffer[4]; //todo supporting 4digits length of msg
+//    bzero(buffer, 4);
+//    readFromServer(buffer, 4);
 //
-    int msgSize = atoi(buffer);
+//    int msgSize = atoi(buffer);
     char incomingMsg[msgSize];
     readFromServer(incomingMsg, msgSize);
 
@@ -239,21 +242,25 @@ void ClientObj::writeToServer(const std::string& command) {
     }
 }
 
-int ClientObj::readFromServer(char * buf, int n) {
+void ClientObj::readFromServer(char * buf, int n) {
     int bcount = 0; /* counts bytes read */
     int br = 0; /* bytes read this pass */
 
-    while (bcount < n) { /* loop until full buffer */
-        br = read(this->sockfd, buf, n-bcount);
-        if (br > 0) {
-            bcount += br;
-            buf += br;
-        }
-        if (br < 1) {
-            print_error("read", errno);
-        }
+    br = read(this->sockfd, buf, n);
+    if (br < 1) {
+        print_error("read", errno);
     }
-    return(bcount);
+//    while (bcount < n) { /* loop until full buffer */
+//        br = read(this->sockfd, buf, n-bcount);
+//        if (br > 0) {
+//            bcount += br;
+//            buf += br;
+//        }
+//        if (br < 1) {
+//            print_error("read", errno);
+//        }
+//    }
+//    return(bcount);
 }
 
 //// ===========================   Global Variables ===============================================
