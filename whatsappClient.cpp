@@ -33,7 +33,8 @@ struct Command
 };
 
 //// ============================  Forward Declarations ===========================================
-bool validateGroupCreation(Command * command, std::string * senderName);
+//bool validateClientRequest(std::string * userInput);
+//bool validateGroupCreation(Command * command, std::string * senderName);
 bool validateSend(Command * command, std::string * senderName);
 bool isNameValid(std::string * name);
 void requestCreateGroup(Command * command, std::string * senderName);
@@ -62,6 +63,7 @@ public:
     void selectPhase();
 
 private:
+    void handleClientRequest(std::string * userInput);
     bool validateGroupCreation(Command * command);
     bool validateSend(Command * command);
     void requestCreateGroup(Command * command);
@@ -104,6 +106,37 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
     }
     //todo send name to actually register.
     print_connection(); //todo check first server reply
+}
+
+void ClientObj::handleClientRequest(std::string * userInput) {
+    Command command;
+    parse_command(*userInput, command.type, command.name, command.message, command.clients);
+
+    switch (command.type) {
+        case CREATE_GROUP:
+            if (this->validateGroupCreation(&command)) {
+                //todo write
+            } else { print_invalid_input(); }
+            break;
+
+        case SEND:
+            if (this->validateSend(&command)) {
+                //todo write
+            } else { print_invalid_input(); }
+            break;
+
+        case WHO:
+            //todo write
+            break;
+
+        case EXIT:
+            //todo write
+            //exit
+
+        case INVALID:
+            print_invalid_input();
+            break;
+    }
 }
 
 bool ClientObj::validateGroupCreation(Command * command) {
@@ -222,13 +255,8 @@ void ClientObj::selectPhase() {
             //msg from stdin
             std::string userInput;
             getline(std::cin, userInput);//todo 22:29
-
-        } else {
-            //will check each client  if it’s in readfds
-            //and then receive a message from him
-
+            handleClientRequest(&userInput);
         }
-        break;//todo remove this!!!!!!!
     }
 }
 
