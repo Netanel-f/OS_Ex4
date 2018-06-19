@@ -101,7 +101,7 @@ ClientObj::ClientObj(const std::string &clientName, unsigned short port, char * 
 }
 
 void ClientObj::connectToServer() {
-    std::string cmd = "CONNECT ";
+    std::string cmd = "CONNECT ";   //todo fix parse_command to support CONNECT
     cmd += this->clientName;
     writeToServer(cmd);
 }
@@ -292,9 +292,7 @@ void ClientObj::selectPhase() {
     fd_set readfds; //Represent a set of file descriptors.
     FD_ZERO(&clientsfds);   //Initializes the file descriptor set fdset to have zero bits for all file descriptors
 
-    FD_SET(this->sockfd,
-           &clientsfds);  //Sets the bit for the file descriptor fd in the file descriptor set fdset.
-
+    FD_SET(this->sockfd, &clientsfds);  //Sets the bit for the file descriptor fd in the file descriptor set fdset.
     FD_SET(STDIN_FILENO, &clientsfds);
 
     int retVal;
@@ -312,7 +310,7 @@ void ClientObj::selectPhase() {
         if (FD_ISSET(STDIN_FILENO, &readfds)) {
             //msg from stdin
             std::string userInput;
-            getline(std::cin, userInput);//todo 22:29
+            getline(std::cin, userInput);
             handleClientRequest(&userInput);
         }
 
