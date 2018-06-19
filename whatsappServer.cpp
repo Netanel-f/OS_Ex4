@@ -176,20 +176,28 @@ void Server::selectPhase() {
 
     FD_SET(STDIN_FILENO, &clientsfds);
     int retVal;
+    int maxfds;
     while (true) {
         readfds = clientsfds;
-        retVal = select(MAX_QUEUE+2, &readfds, nullptr, nullptr, nullptr); //todo implement MAX_fd+1
+        maxfds = this->getMaxfd();
+        retVal = select(maxfds+1, &readfds, nullptr, nullptr, nullptr);
         if (retVal == -1) {
             print_error("select", errno);
-            //todo terminate server and return -1;
+            continue;
+            //todo VALIDATE THAT SERVER NEVER TERMINATES??? terminate server and return -1;
         }else if (retVal == 0) {
             continue;
         }
         //Returns a non-zero value if the bit for the file descriptor fd is set in the file descriptor set pointed to by fdset, and 0 otherwise
         if (FD_ISSET(welcomeSocket, &readfds)) {
             //will also add the client to the clientsfds
-            int connectionSocket = connectNewClient(welcomeSocket);
-            FD_SET(connectionSocket, &clientsfds);
+//            int connectionSocket = connectNewClient(welcomeSocket);
+            int connectionSocket = accept(welcomeSocket, nullptr, nullptr);
+            if (connectionSocket < 0) {
+                print_error("accept", errno);
+            } else {
+                FD_SET(connectionSocket, &clientsfds);
+            }
         }
 
         if (FD_ISSET(STDIN_FILENO, &readfds)) {
@@ -215,12 +223,19 @@ int Server::connectNewClient(int welcomeSocket) {
     } else {
         return connectionSocket;
     }
-    registerClient() //todo register client name
+//    registerClient() //todo register client name
 }
 
 
-void Server::serverStdInput(){
-    //todo wait for EXIT somehow (Select)
+void Server::serverStdInput() {
+    std::string serverInput;
+    getline(std::cin, serverInput);
+    if (serverInput == "EXIT") {
+        print_exit();
+        //todo exit, mem clean and socket closing.
+    } else {
+        print_invalid_input();
+    }
 }
 
 void Server::handleClientRequest(){
