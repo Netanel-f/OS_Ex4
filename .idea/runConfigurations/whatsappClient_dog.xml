@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="whatsappClient dog" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="dog 132.65.125.235 9021" PASS_PARENT_ENVS_2="true" PROJECT_NAME="OS_Ex4" TARGET_NAME="whatsappClient" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="OS_Ex4" RUN_TARGET_NAME="whatsappClient">
+    <envs />
+    <method />
+  </configuration>
+</component>

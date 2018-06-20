@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="parserTest" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="OS_Ex4" TARGET_NAME="parserTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="OS_Ex4" RUN_TARGET_NAME="parserTest">
+    <envs />
+    <method />
+  </configuration>
+</component>
