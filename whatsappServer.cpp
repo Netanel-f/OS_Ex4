@@ -276,6 +276,12 @@ void Server::handleClientRequest(int sockfd) {
     std::string incomingMsg = this->readBuf;
 
     Command cmd;
+
+    cmd.type=INVALID;
+    cmd.name="";
+    cmd.message="";
+    cmd.clients.clear();
+
     parse_command(incomingMsg, cmd.type, cmd.name, cmd.message, cmd.clients); //todo invalid
     // input on all
     cmd.sender = getClientNameById(sockfd);

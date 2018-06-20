@@ -1,0 +1,21 @@
+//todo make work with 127.0.0.1
+//todo make work over net
+//todo fix parser
+//todo remove client from fdset
+//todo check if read 0 is acceptable
+
+
+
+/// show ip
+
+ip addr show
+
+hostname -I
+
+
+/// clear port
+
+fuser 9021/tcp
+     ^port^
+
+lsof -n -i | grep ":9021"
