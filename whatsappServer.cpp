@@ -227,7 +227,7 @@ bool Server::shouldTerminateServer() {
 void Server::writeToClient(int sockfd, const std::string& command) {
 //    char buf[WA_MAX_INPUT + 1];
 //    bzero(buf, WA_MAX_INPUT + 1);
-    strcpy(this->writeBuf, command.c_str());
+    strcpy(this->writeBuf, command.c_str()); //todo J maybe n copy
 
     int bcount = 0; /* counts bytes read */
     int br = 0; /* bytes read this pass */
@@ -273,7 +273,7 @@ void Server::handleClientRequest(int sockfd) {
         }
     }
 
-    std::string incomingMsg = this->readBuf;
+    std::string incomingMsg = this->readBuf; //todo BUG - this is often empty after connect
 
     Command cmd;
 

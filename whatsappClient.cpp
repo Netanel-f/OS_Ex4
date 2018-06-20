@@ -50,7 +50,7 @@ public:
     bool forcedExit = false;
 private:
     bool handleServerReply();
-    void handleClientRequest(std::string* userInput);
+    void handleClientRequest(std::string userInput);
     bool validateGroupCreation(Command* command, std::string* validateCmd);
     bool validateSend(Command* command);
     void writeToServer(const std::string& command);
@@ -167,9 +167,10 @@ bool ClientObj::handleServerReply() {
     return true; //todo examine
 }
 
-void ClientObj::handleClientRequest(std::string* userInput) {
+void ClientObj::handleClientRequest(std::string userInput) {
     Command command;
-    parse_command(*userInput, command.type, command.name, command.message, command.clients);
+    command.command = userInput; //todo J was this needed??
+    parse_command(userInput, command.type, command.name, command.message, command.clients);
     std::string validateCmd;
 
     switch (command.type) {
@@ -252,7 +253,7 @@ bool ClientObj::validateSend(Command* command) {
 void ClientObj::writeToServer(const std::string& command) {
 //    char buf[WA_MAX_INPUT + 1];
 //    bzero(buf, WA_MAX_INPUT + 1);
-    strcpy(this->writeBuf, command.c_str());
+    strncpy(this->writeBuf, command.c_str(), WA_MAX_INPUT); //todo J changed to n copy to zero-fill
 
     int bcount = 0; /* counts bytes read */
     int br = 0; /* bytes read this pass */
@@ -351,7 +352,7 @@ void ClientObj::selectPhase() {
             //msg from stdin
             std::string userInput;
             getline(std::cin, userInput);
-            handleClientRequest(&userInput);
+            handleClientRequest(userInput);
         }
 
         if (FD_ISSET(this->sockfd, &readfds)) {

@@ -1,8 +1,10 @@
 //todo make work with 127.0.0.1
 //todo make work over net
-//todo fix parser
+// fix parser DONE
 //todo remove client from fdset
 //todo check if read 0 is acceptable
+//todo see why input is empty
+
 
 
 
