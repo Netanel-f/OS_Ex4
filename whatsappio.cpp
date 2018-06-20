@@ -9,6 +9,10 @@ void print_connection() {
     printf("Connected Successfully.\n");
 }
 
+void print_connection_server(const std::string& client) {
+    printf("%s connected.\n", client.c_str());
+}
+
 void print_dup_connection() {
     printf("Client name is already in use.\n");
 }
@@ -143,12 +147,11 @@ void parse_command(const std::string& command, command_type& commandT,
         commandT = EXIT;
     } else if (!strcmp(s, "connect")) {
         commandT = CONNECT;
-        s = strtok_r(NULL, " ", &saveptr);
         if (!s) {
             commandT = INVALID;
             return;
         } else {
-            name = s;
+            name = saveptr;
         }
     } else {
         commandT = INVALID;
@@ -159,8 +162,9 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
                     std::string& name, std::string& message, std::vector<std::string>& clients){
     // send T/F
     // create_group T/F <group_name>
-    // Who <ret_client_name_seperated_by_commas_without_spaces>
+    // who <ret_client_name_separated_by_commas_without_spaces>
     // exit T/F
+    // message <sender_name> <message>
     // connect T/F/D
 
     char sReply[WA_MAX_INPUT];

@@ -10,7 +10,7 @@
 #define WA_MAX_GROUP 50
 #define WA_MAX_INPUT ((WA_MAX_NAME+1)*(WA_MAX_GROUP+2))
 
-enum command_type {CONNECT, MESSAGE, CREATE_GROUP, SEND, WHO, EXIT, INVALID};
+enum command_type {CONNECT, MESSAGE, CREATE_GROUP, SEND, WHO, EXIT, TERMINATED, INVALID};
 
 /*
  * Description: Prints to the screen a message when the user terminate the
@@ -23,6 +23,13 @@ void print_exit();
  * connection to the server
 */
 void print_connection();
+
+/*
+ * Description: Prints to the screen a message when the client established
+ * connection to the server, in the server
+ * client: Name of the sender
+*/
+void print_connection_server(const std::string& client);
 
 /*
  * Description: Prints to the screen a message when the client tries to
