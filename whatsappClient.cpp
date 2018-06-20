@@ -114,7 +114,7 @@ bool ClientObj::handleServerReply() {
     Command sReply;
     parse_response(incomingMsg, sReply.type, sReply.name, sReply.message, sReply.clients);
 
-    bool replyResult = (bool) (sReply.message.compare("T"));
+    bool replyResult = (sReply.message =="T");
 
     // send T/F
     // create_group T/F <group_name>
@@ -143,7 +143,7 @@ bool ClientObj::handleServerReply() {
         if (replyResult) {
             print_connection();
         }
-        else if ((bool) (sReply.message.compare("D"))) {
+        else if (sReply.message == "D") {
             print_dup_connection();
         }
         else {
@@ -284,7 +284,7 @@ std::string ClientObj::readFromServer() {
             bcount += br;
 //            buf += br;
         }
-        if (br < 1) {
+        if (br == -1) { //todo J bcz read 0 kept happening
             print_error("read", errno);
         }
     }

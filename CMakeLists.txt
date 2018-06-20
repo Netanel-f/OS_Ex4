@@ -4,7 +4,7 @@ project(OS_Ex4)
 set(CMAKE_CXX_STANDARD 11)
 
 set(CLIENT whatsappClient.cpp)
-set(SERVER whatsappServer.cpp)
+set(SERVER OLD_whatsappServer.cpp)
 set(NEW_SERVER whatsappServer1.cpp)
 set(IO whatsappio.cpp whatsappio.h)
 

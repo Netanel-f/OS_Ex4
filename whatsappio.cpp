@@ -103,6 +103,8 @@ void print_invalid_input() {
 }
 
 void print_error(const std::string& function_name, int error_number) {
+    bool dbg = true; //todo remove
+    if(dbg) printf("debug: error %i message is: %s\n", error_number,  strerror(error_number));
     printf("ERROR: %s %d.\n", function_name.c_str(), error_number);
 }
 
@@ -119,6 +121,7 @@ void parse_command(const std::string& command, command_type& commandT,
     strcpy(c, command.c_str());
     s = strtok_r(c, " ", &saveptr);
 
+    if(s==NULL) s="";
     if (!strcmp(s, "create_group")) {
         commandT = CREATE_GROUP;
         s = strtok_r(NULL, " ", &saveptr);

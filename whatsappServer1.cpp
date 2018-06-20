@@ -59,6 +59,9 @@ class Server {
     char readBuf[WA_MAX_INPUT+1];
     char writeBuf[WA_MAX_INPUT+1];
 
+    fd_set clientsfds;
+    fd_set readfds; //Represent a set of file descriptors.
+
 public:
 
     //// C-tor
@@ -154,8 +157,8 @@ Server::Server(unsigned short portNumber) {
 }
 
 void Server::selectPhase() {
-    fd_set clientsfds;
-    fd_set readfds; //Represent a set of file descriptors.
+    //fd_set clientsfds; //todo J - moved this to be fields for later access
+    //fd_set readfds; //Represent a set of file descriptors.
     FD_ZERO(&clientsfds);   //Initializes the file descriptor set fdset to have zero bits for all file descriptors
 
     FD_SET(welcomeSocket, &clientsfds);  //Sets the bit for the file descriptor fd in the file descriptor set fdset.
@@ -191,7 +194,7 @@ void Server::selectPhase() {
         if (FD_ISSET(STDIN_FILENO, &readfds)) {
             //msg from stdin
             keepLoop = !shouldTerminateServer();
-            break;
+            continue; // todo J changed from break
         }
 
         else {
@@ -265,7 +268,7 @@ void Server::handleClientRequest(int sockfd) {
             bcount += br;
 //            buf += br;
         }
-        if (br < 1) {
+        if (br == -1) { //todo J bcz read 0 kept happening
             print_error("read", errno);
         }
     }
@@ -273,7 +276,8 @@ void Server::handleClientRequest(int sockfd) {
     std::string incomingMsg = this->readBuf;
 
     Command cmd;
-    parse_command(incomingMsg, cmd.type, cmd.name, cmd.message, cmd.clients);
+    parse_command(incomingMsg, cmd.type, cmd.name, cmd.message, cmd.clients); //todo invalid
+    // input on all
     cmd.sender = getClientNameById(sockfd);
     cmd.senderSockfd = sockfd;
 
@@ -533,6 +537,9 @@ void Server::clientExit(Command cmd) {
 
     // remove sender from server (after reported success)
     this->clients1.erase(cmd.sender);
+
+    //todo remove user from fd.set
+
 }
 
 bool Server::isTakenName(std::string& name) {
