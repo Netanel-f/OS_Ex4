@@ -1,44 +1,12 @@
 Testing scenarios:
+please edit this link with test results.
 
-client suddenly closes
+https://docs.google.com/spreadsheets/d/18gEUKBY-ply1ZY0wRf6Ca8ciH90oeYlK6e2fY6FujVs/edit?usp=sharing
 
-clients: a, b, c
-
-create_group
-############
-a is the client running test
-
-should fail:
-1. create_group a
-1. create_group a,a,a,a
-
-should succeed
-1. create_group a,b
-2. create_group a,a,a,b
-3. create_group a,a,a,b,b,b
-4. create_group b,a,b,a
-5. create_group b,c     (should succeed with a is part of the group.)
-
-send:
-############
-hould fail:
-1. send a hello
-2. send b   //todo should fail?
-3. send b <msg which is longer than 256>
-
-should succeed
-1. send b hello
-2. send c bye
-3.
-2. create_group a,a,a,b
-3. create_group a,a,a,b,b,b
-4. create_group b,a,b,a
-5. create_group b,c     (should succeed with a is part of the group.)
-
-
+DEFINE default string to replace "deaf" (which is becuase print arent friendly with nullptr.
 //todo mishandled space in msg
 //todo make work with 127.0.0.1
-//todo make work over net
+//todo make work over net - worked on two PCs with hostname
 // fix parser DONE
 //todo remove client from fdset
 //todo check if read 0 is acceptable

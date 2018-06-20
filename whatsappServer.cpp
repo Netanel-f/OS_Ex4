@@ -435,13 +435,13 @@ void Server::createGroup(Command cmd) {
     //print success on server
     print_create_group(true, true, cmd.sender, cmd.name);
     //report success to client
-    writeToClient(cmd.senderSockfd, "create_group T");
+    writeToClient(cmd.senderSockfd, "create_group T " + cmd.name);
 
 }
 
 void Server::send(Command cmd) {
 
-    std::string message = "message" + cmd.sender + " " + cmd.message;
+    std::string message = "message " + cmd.sender + " " + cmd.message;
 
     // if name in clients
     if (isClient(cmd.name)) {
@@ -452,21 +452,21 @@ void Server::send(Command cmd) {
         // notify sender of success
         writeToClient(cmd.senderSockfd, "send T");
         // print success server
-        print_send(true, true, cmd.sender, cmd.name, message);
+        print_send(true, true, cmd.sender, cmd.name, cmd.message);
 
     } else if (isGroup(cmd.name)) {   // if name in groups
 
         // ensure caller is in this group
         bool senderInGroup = false;
         for (const std::string & memberName : groups1.at(cmd.name)) {
-            if (!(memberName.compare(cmd.name))) {
+            if (!(memberName.compare(cmd.sender))) {
                 senderInGroup = true;
             }
         }
 
         if (senderInGroup) {
             for (const std::string & memberName : groups1.at(cmd.name)) {
-                if (!(memberName.compare(cmd.name))) {
+                if (!(memberName.compare(cmd.sender))) {
                     // notify sender of success
                     writeToClient(cmd.senderSockfd, "send T");
                 } else {
@@ -474,30 +474,22 @@ void Server::send(Command cmd) {
                     writeToClient((this->clients1[memberName]), message);
                 }
             }
-            // notify sender of success
-            writeToClient(cmd.senderSockfd, "send T");
+            
             // print success server
-            print_send(true, true, cmd.sender, cmd.name, message);
+            print_send(true, true, cmd.sender, cmd.name, cmd.message);
             return;
+        } else {
+            // notify sender of failure
+            writeToClient(cmd.senderSockfd, "send F");
+            // print fail server
+            print_send(true, false, cmd.sender, cmd.name, cmd.message);
         }
+    } else { // else error
+        // notify sender of failure
+        writeToClient(cmd.senderSockfd, "send F");
+        // print fail server
+        print_send(true, false, cmd.sender, cmd.name, cmd.message);
     }
-//        } else {
-//            // notify sender of failure
-//            writeToClient(cmd.senderSockfd, "send F");
-//            // print fail server
-//            print_send(true, false, cmd.sender, cmd.name, message);
-//        }
-//    } else { // else error
-//        // notify sender of failure
-//        writeToClient(cmd.senderSockfd, "send F");
-//        // print fail server
-//        print_send(true, false, cmd.sender, cmd.name, message);
-//    }
-    // if arrived here - send failed
-    // notify sender of failure
-    writeToClient(cmd.senderSockfd, "send F");
-    // print fail server
-    print_send(true, false, cmd.sender, cmd.name, message);
 }
 
 void Server::who(Command cmd) {
@@ -506,12 +498,12 @@ void Server::who(Command cmd) {
 
     // get all names
     for (auto client: this->clients1) {
-        namesVec.push_back(client.first);
+        namesVec.emplace_back(client.first);
     }
 
     std::sort(namesVec.begin(), namesVec.end());
 
-    std::string list = "who ";
+    std::string list = "who T ";
 
     for (const std::string & name: namesVec) {
         list += name+",";
@@ -531,18 +523,24 @@ void Server::clientExit(Command cmd) {
                            group.second.end());
     }
 
+
+
+
+    // send success to client
+    writeToClient(cmd.senderSockfd, "exit T ");
+
     //close sockets
     if (close(cmd.senderSockfd) != 0) {
         print_error("close", errno);
     }
 
+
+    // remove sender from server (after reported success) and from fd_set
+    this->clients1.erase(cmd.sender);
+    FD_CLR(cmd.senderSockfd, &(this->clientsfds));
+
     //print success to server
     print_exit(true, cmd.sender);
-    // send success to client
-    writeToClient(cmd.senderSockfd, "exit T ");
-
-    // remove sender from server (after reported success)
-    this->clients1.erase(cmd.sender);
 
     //todo remove user from fd.set
 

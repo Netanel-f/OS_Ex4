@@ -113,7 +113,7 @@ bool ClientObj::handleServerReply() {
 
     Command sReply;
     parse_response(incomingMsg, sReply.type, sReply.name, sReply.message, sReply.clients);
-
+    sReply.command = incomingMsg;
     bool replyResult = (sReply.message =="T");
 
     // send T/F
@@ -125,11 +125,11 @@ bool ClientObj::handleServerReply() {
 
     switch (sReply.type) {
     case CREATE_GROUP:
-        print_create_group(false, replyResult, nullptr, sReply.name);
+        print_create_group(false, replyResult, "deaf", sReply.name);
         break;
 
     case SEND:
-        print_send(false, replyResult, nullptr, nullptr, nullptr);
+        print_send(false, replyResult, "deaf", "deaf", "deaf");
         break;
 
     case WHO:
@@ -376,7 +376,7 @@ int main(int argc, char* argv[]) {
     client.selectPhase();
     bool serverWasTerminated = client.forcedExit;
     client.~ClientObj();
-    print_exit(false, nullptr);
+    print_exit(false, "deaf");
     exit(serverWasTerminated);
 
 }

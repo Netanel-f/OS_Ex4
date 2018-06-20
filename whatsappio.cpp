@@ -171,7 +171,7 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
                     std::string& name, std::string& message, std::vector<std::string>& clients){
     // send T/F
     // create_group T/F <group_name>
-    // who <ret_client_name_separated_by_commas_without_spaces>
+    // who T/F <ret_client_name_separated_by_commas_without_spaces>
     // exit T/F
     // message <sender_name> <message>
     // connect T/F/D
@@ -208,6 +208,8 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
         }
     } else if (!strcmp(s, "who")) {
         serverResponseT = WHO;
+        s = strtok_r(NULL, " ", &saveptr);
+        message = s;
         while ((s = strtok_r(NULL, ",", &saveptr)) != NULL) {   //todo check last comma
             clients.emplace_back(s);
         }
