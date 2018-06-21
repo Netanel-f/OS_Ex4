@@ -151,6 +151,10 @@ void parse_command(const std::string& command, command_type& commandT,
             return;
         } else {
             name = s;
+            if (command.length() <= name.size() + 6) {
+                commandT = INVALID;
+                return;
+            }
             message = command.substr(name.size() + 6); // 6 = 2 spaces + "send"
         }
     } else if (!strcmp(s, "who")) {
