@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "whatsappio.h"
 
 bool dbg = true; //todo remove
@@ -123,7 +124,11 @@ void parse_command(const std::string& command, command_type& commandT,
                                  // todo so try to make segfault safe
 //        return;
 //    }
-
+    if (command.empty() || (std::count(command.begin(), command.end(), ' ') == command.length()))
+    {
+        commandT = INVALID;
+        return;
+    }
     strcpy(c, command.c_str());
     s = strtok_r(c, " ", &saveptr);
 
