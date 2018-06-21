@@ -13,17 +13,11 @@
 
 //// ============================   Constants =====================================================
 static const int MAX_QUEUE = 10;
-static const int MAX_HOST_NAME_LEN = 30;
-static const int MAX_GROUP_NAME_LEN = 30;   //todo delete
-static const int BUFF_SIZE = 256;   //todo delete
-static const int MAX_MESSAGE_LENGTH = 256;  //todo delete
-static const int FUCK = 1; // todo exit val?    //todo delete
-
 
 //// ===========================  Structs & Typedefs ==============================================
 
 
-// command
+// Command struct
 struct Command { //todo make init?
     command_type type;
     std::string name;
@@ -101,7 +95,7 @@ private:
     void who(Command cmd);
     void clientExit(Command cmd);
     void registerClient(Command cmd);
-    void tempregisterClient(int sockfd);
+    void tempRegisterClient(int sockfd);
 
     //// name legality
     bool isTakenName(std::string& name);
@@ -122,8 +116,6 @@ int parsePortNum(int argc, char** argv);
 /// string case insensitive compare
 bool NoCaseLess(const std::string &a, const std::string &b);
 
-//// errors
-//void errCheck(int& retVal, const std::string& funcName, int successVal = 0);
 
 //// ===============================  Class Server ============================================
 
@@ -131,21 +123,19 @@ bool NoCaseLess(const std::string &a, const std::string &b);
 
 Server::Server(unsigned short portNumber) {
 
-    char srvName[MAX_HOST_NAME_LEN+1];
+    char srvName[WA_MAX_NAME + 1];
     struct sockaddr_in sa;  // sin_port and sin_addr must be in Network Byte order.
     struct hostent* hostEnt;
 
-    int retVal = gethostname(srvName, MAX_HOST_NAME_LEN);
+    int retVal = gethostname(srvName, WA_MAX_NAME);
     if (retVal < 0) {
         print_error("gethostname", errno);
-        exit(FUCK); //todo should we exit?
     }
 
     bzero(&sa, sizeof(struct sockaddr_in));
     hostEnt = gethostbyname(srvName);
     if (hostEnt == nullptr) {
         print_error("gethostbyname", errno);
-        exit(FUCK); //todo should we exit?
     }
 
     memset(&sa, 0, sizeof(sa));
@@ -179,17 +169,19 @@ Server::Server(unsigned short portNumber) {
     bzero(this->writeBuf, WA_MAX_INPUT +1);
 }
 
+/**
+ * Server's select phase. Looping over select.
+ */
 void Server::selectPhase() {
-    //fd_set clientsfds; //todo J - moved this to be fields for later access
-    //fd_set readfds; //Represent a set of file descriptors.
-    FD_ZERO(&clientsfds);   //Initializes the file descriptor set fdset to have zero bits for all file descriptors
-
-    FD_SET(welcomeSocket, &clientsfds);  //Sets the bit for the file descriptor fd in the file descriptor set fdset.
+    FD_ZERO(&clientsfds);
+    FD_SET(welcomeSocket, &clientsfds);
     FD_SET(STDIN_FILENO, &clientsfds);
 
     int retVal;
     int maxfds;
     bool keepLoop = true;
+
+    // looping to wait for input socket to be ready to read.
     while (keepLoop) {
         readfds = clientsfds;
         maxfds = this->getMaxfd();
@@ -201,7 +193,7 @@ void Server::selectPhase() {
         else if (retVal == 0) {
             continue;
         }
-        //Returns a non-zero value if the bit for the file descriptor fd is set in the file descriptor set pointed to by fdset, and 0 otherwise
+
         if (FD_ISSET(welcomeSocket, &readfds)) {
 
             //will also add the client to the clientsfds
@@ -210,19 +202,16 @@ void Server::selectPhase() {
                 print_error("accept", errno);
             } else {
                 FD_SET(connectionSocket, &clientsfds);
-                tempregisterClient(connectionSocket);
+                tempRegisterClient(connectionSocket);
             }
         }
 
-        if (FD_ISSET(STDIN_FILENO, &readfds)) {
-            //msg from stdin
+        if (FD_ISSET(STDIN_FILENO, &readfds)) { // reading message from std input.
             keepLoop = !shouldTerminateServer();
             continue;
-        }
 
-        else {
-            //will check each client if it’s in readfds
-            //and then receive a message from him
+        } else { //will check each client if it’s in readfds and then receive a message from him.
+
             for (auto client:this->clients1) {
                 if (FD_ISSET(client.second, &readfds)) {
                     handleClientRequest(client.second);
@@ -232,7 +221,11 @@ void Server::selectPhase() {
     }
 }
 
-
+/**
+ * This method will check if user has requested to EXIT the server.
+ * If true server is notify clients about termination and closing sockets
+ * @return true iff user typed to server console 'EXIT'
+ */
 bool Server::shouldTerminateServer() {
     std::string serverInput;
     getline(std::cin, serverInput);
@@ -246,11 +239,14 @@ bool Server::shouldTerminateServer() {
     }
 }
 
+/**
+ * Write command string into given sockfd
+ * @param sockfd the sock fd to write the command to
+ * @param command client sockfd
+ */
 void Server::writeToClient(int sockfd, const std::string& command) {
-//    char buf[WA_MAX_INPUT + 1];
-//    bzero(buf, WA_MAX_INPUT + 1);
-    strcpy(this->writeBuf, command.c_str());
 
+    strcpy(this->writeBuf, command.c_str());
     int bcount = 0; /* counts bytes read */
     int br = 0; /* bytes read this pass */
     while (bcount < WA_MAX_INPUT) { /* loop until full buffer */
@@ -264,51 +260,53 @@ void Server::writeToClient(int sockfd, const std::string& command) {
     }
 }
 
+/**
+ * Notifying all server's clients to terminate, and closing server's sockets.
+ */
 void Server::killAllSocketsAndClients() {
 
     std::string terminateCmd = "terminated";
     for (auto client:this->clients1) {
-        // tell clients that server is terminated.
-        this->writeToClient(client.second, terminateCmd);
-        //close sockets
-        if (close(client.second)!=0) {
+        this->writeToClient(client.second, terminateCmd);   // tell clients that server is terminated.
+
+        if (close(client.second) != 0) {  //close sockets
             print_error("close", errno);
         }
     }
     close(welcomeSocket);
-
 }
 
+/**
+ * will read from client with given sockfd and will handle it's request
+ * @param sockfd client sockfd
+ */
 void Server::handleClientRequest(int sockfd) {
-    // read from socket
 
     int bcount = 0; /* counts bytes read */
     int br = 0; /* bytes read this pass */
-//    char * buf;
-//    bzero(buf, WA_MAX_INPUT + 1);
+
     while (bcount < WA_MAX_INPUT) { /* loop until full buffer */
-        br = (int)read(sockfd, this->readBuf, (size_t) WA_MAX_INPUT - bcount); //reading is atounce
+        br = (int) read(sockfd, this->readBuf, (size_t) WA_MAX_INPUT - bcount); //reading is atounce
         if (br > 0) {
             bcount += br;
-//            buf += br;
         }
-        if (br < 1) { //todo J bcz read 0 kept happening - THIS CAUSES INF LOOP ON CLIENT CRASH
+        if (br < 1) {
             print_error("read", errno);
-            //todo kill client if error
-            return; //todo what to do
+            return;
         }
     }
 
+    // setting client message as string
     std::string incomingMsg = this->readBuf;
     Command cmd;
 
+    // parsing client request
     cmd.type=INVALID;
     cmd.name="";
     cmd.message="";
     cmd.clients.clear();
 
     parse_command(incomingMsg, cmd.type, cmd.name, cmd.message, cmd.clients);
-    // input on all
     cmd.sender = getClientNameById(sockfd);
     cmd.senderSockfd = sockfd;
 
@@ -338,19 +336,26 @@ void Server::handleClientRequest(int sockfd) {
             print_invalid_input();
             break;
     }
-
 };
 
 
 //// DB modify
-void Server::tempregisterClient(int sockfd) {
+/**
+ * This will register new client connection temporarly until getting his name.
+ * @param sockfd to register.
+ */
+void Server::tempRegisterClient(int sockfd) {
     this->clients1.emplace(std::pair<std::string, int>("@" + std::to_string(sockfd), sockfd));
 }
 
+/**
+ * This will register new client with his name instead of his temp name.
+ * @param cmd
+ */
 void Server::registerClient(Command cmd) {
     this->clients1.erase("@" + std::to_string(cmd.senderSockfd));
     if (isTakenName(cmd.name)) {
-        // notify failure to client
+        // notify failure (duplicated) to client
         writeToClient(cmd.senderSockfd, "connect D");
         return;
     }
@@ -364,14 +369,38 @@ void Server::registerClient(Command cmd) {
 
 //// DB queries
 
+/**
+ * check if given name is client
+ * @param name
+ * @return true iff a client with given name is already exist.
+ */
 bool Server::isClient(std::string& name) {
     return ((bool) this->clients1.count(name)); // (count is zero (false) if not there.
 }
 
+/**
+ * check if given name is group
+ * @param name
+ * @return true iff a group with given name is already exist.
+ */
 bool Server::isGroup(std::string& name) {
     return ((bool) this->groups1.count(name)); // (count is zero (false) if not there.
 }
 
+/**
+ * check if a name is already registered as client/group
+ * @param name name to check
+ * @return true iff already registered
+ */
+bool Server::isTakenName(std::string& name) {
+    // ensure  name not taken.
+    return (isClient(name) || isGroup(name));
+}
+
+/**
+ *
+ * @return the max fd id exist on server
+ */
 int Server::getMaxfd() {
     int max = this->welcomeSocket;
     for (auto client :this->clients1) {
@@ -380,7 +409,13 @@ int Server::getMaxfd() {
     return max;
 }
 
+/**
+ *
+ * @param sockfd sockfd to check
+ * @return client name of the given sock fd.
+ */
 std::string Server::getClientNameById(int sockfd) {
+
     for (auto client:this->clients1){
         if (client.second == sockfd) {
             return client.first;
@@ -391,7 +426,10 @@ std::string Server::getClientNameById(int sockfd) {
 
 
 //// request handling
-
+/**
+ * Creating group in server by the given command.
+ * @param cmd the create_group command details.
+ */
 void Server::createGroup(Command cmd) {
 
     // ensure group name is unique (not taken)
@@ -446,6 +484,10 @@ void Server::createGroup(Command cmd) {
 
 }
 
+/**
+ * Sending message in server by the given command.
+ * @param cmd to send command details.
+ */
 void Server::send(Command cmd) {
 
     std::string message = "message " + cmd.sender + " " + cmd.message;
@@ -499,6 +541,10 @@ void Server::send(Command cmd) {
     }
 }
 
+/**
+ * Handling who in server by the given command.
+ * @param cmd who command details.
+ */
 void Server::who(Command cmd) {
     //// order and return names
     std::vector<std::string> namesVec;
@@ -508,7 +554,6 @@ void Server::who(Command cmd) {
         namesVec.emplace_back(client.first);
     }
 
-    //std::sort(namesVec.begin(), namesVec.end());
     std::sort(namesVec.begin(), namesVec.end(), NoCaseLess );
 
     std::string list = "who T ";
@@ -523,6 +568,10 @@ void Server::who(Command cmd) {
     print_who_server(cmd.sender);
 }
 
+/**
+ * Handling client exit request by the given command.
+ * @param cmd the exit command details.
+ */
 void Server::clientExit(Command cmd) {
 
     // remove sender from all groups
@@ -558,15 +607,16 @@ void Server::clientExit(Command cmd) {
     print_exit(true, cmd.sender);
 }
 
-bool Server::isTakenName(std::string& name) {
-    // ensure  name not taken.
-    return (isClient(name) || isGroup(name));
-}
-
 
 //// ===============================  Helper Functions ============================================
 
 //// input checking
+/**
+ * checking args count and parsing port number
+ * @param argc main args count
+ * @param argv main argv[]
+ * @return port number as int.
+ */
 int parsePortNum(int argc, char** argv) {
 
     //// check args
@@ -574,15 +624,7 @@ int parsePortNum(int argc, char** argv) {
         print_server_usage();  //todo server shouldnt crash upon receiving illegal requests!
         exit(1);
     }
-
     int portNumber = atoi(argv[1]);
-
-    //todo verify if needed
-//    if (portNumber<0 || portNumber>65535) {
-//        print_server_usage();
-//        exit(1);
-//    }
-
     return portNumber;
 }
 
@@ -593,28 +635,12 @@ int main(int argc, char* argv[]) {
 
     //// --- Init  ---
     int portNumber = parsePortNum(argc, argv);
-    //// init Server
+    //// Setup server
     Server server((unsigned short) portNumber);
 
-    //// --- Setup  ---
-    //// create socket
-    //// bind to an ip adress and port
-
-    //// --- Wait  ---
-    //// listen
-    //// accept
+    // Server's select phase.
     server.selectPhase();
     exit(0);
-
-    //// --- Get Request  ---
-    //// read
-    //// parse
-
-    //// --- Process  ---
-    //// write
-    //// close
-
-    //// --- Repeat  ---
 }
 
 //// =============================== helper Function ================================================

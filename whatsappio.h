@@ -119,6 +119,16 @@ void print_error(const std::string& function_name, int error_number);
  * clients: a vector containing the names of all clients
 */
 void parse_command(const std::string& command, command_type& commandT, std::string& name, std::string& message, std::vector<std::string>& clients);
+
+/*
+ * Description: Parse server response  from the argument "command". The other arguments
+ * are used as output of this function.
+ * command: The user input
+ * commandT: The command type
+ * name: Name of the client/group
+ * message: The message
+ * clients: a vector containing the names of all clients
+*/
 void parse_response(const std::string& command, command_type& commandT, std::string& name, std::string& message, std::vector<std::string>& clients);
 
 #endif
