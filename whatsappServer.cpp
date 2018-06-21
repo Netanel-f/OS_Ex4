@@ -291,7 +291,7 @@ void Server::handleClientRequest(int sockfd) {
             bcount += br;
 //            buf += br;
         }
-        if (br == -1) { //todo J bcz read 0 kept happening - THIS CAUSES INF LOOP ON CLIENT CRASH
+        if (br < 1) { //todo J bcz read 0 kept happening - THIS CAUSES INF LOOP ON CLIENT CRASH
             print_error("read", errno);
         }
     }
