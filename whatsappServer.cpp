@@ -531,9 +531,19 @@ void Server::who(Command cmd) {
 void Server::clientExit(Command cmd) {
 
     // remove sender from all groups
+    std::vector<std::string> toErase;
     for (auto group : groups1) {
         group.second.erase(std::remove(group.second.begin(), group.second.end(), cmd.sender),
                            group.second.end());
+        // remember groups to kill
+        if(group.second.empty()){
+            toErase.push_back(group.first);
+        }
+    }
+
+    // kill emptied groups
+    for(auto& name: toErase){
+        groups1.erase(name);
     }
 
     // send success to client
