@@ -294,9 +294,9 @@ std::string ClientObj::readFromServer() {
             bcount += br;
 //            buf += br;
         }
-        if (br < 1) { //todo J bcz read 0 kept happening THIS NEEDS CHANGING FOR DEAD SERVER
+        if (br < 1) {
             print_error("read", errno);
-            return "terminated"; //todo what to do
+            return "terminated";
         }
     }
 //    return(bcount);
