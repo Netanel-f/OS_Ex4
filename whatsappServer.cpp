@@ -276,7 +276,7 @@ void Server::killAllSocketsAndClients() {
             print_error("close", errno);
         }
     }
-    close(welcomeSocket); //todo added by josh
+    close(welcomeSocket);
 
 }
 

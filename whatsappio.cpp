@@ -231,6 +231,8 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
             name = s;
             message = serverResponse.substr(name.size() + 9); // 9 = 2 spaces + "message"
         }
+    } else if (!strcmp(s, "terminated")) {
+        serverResponseT = TERMINATED;
     } else {
         serverResponseT = INVALID;
     }
