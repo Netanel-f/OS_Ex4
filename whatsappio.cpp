@@ -229,8 +229,7 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
             return;
         } else {
             name = s;
-            s = strtok_r(NULL, " ", &saveptr);
-            message = s;
+            message = serverResponse.substr(name.size() + 9); // 9 = 2 spaces + "message"
         }
     } else {
         serverResponseT = INVALID;
