@@ -161,6 +161,8 @@ Server::Server(unsigned short portNumber) {
 
     if (welcomeSocket < 0) { print_error("socket", errno); }
 
+    sa.sin_addr.s_addr = INADDR_ANY;
+
     retVal = bind(welcomeSocket, (struct sockaddr*) &sa, sizeof(struct sockaddr_in));
     if (retVal < 0) {
         print_error("bind", errno);
@@ -293,6 +295,7 @@ void Server::handleClientRequest(int sockfd) {
         }
         if (br < 1) { //todo J bcz read 0 kept happening - THIS CAUSES INF LOOP ON CLIENT CRASH
             print_error("read", errno);
+            return; //todo what to do
         }
     }
 
