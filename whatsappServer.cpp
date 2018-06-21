@@ -33,6 +33,17 @@ struct Command { //todo make init?
     int senderSockfd;
 };
 
+// case insensitive sort
+struct case_insensitive_less : public std::binary_function< char,char,bool >
+{
+    bool operator () (char x, char y) const
+    {
+        return toupper( static_cast< unsigned char >(x)) <
+                toupper( static_cast< unsigned char >(y));
+    }
+};
+
+
 
 typedef std::map<std::string, int> clientsDB;
 typedef std::vector<std::string> GroupMembers1;
@@ -100,10 +111,17 @@ private:
 
 };
 
+
+
+
+
 //// ===============================  Forward Declarations ============================================
 
 //// input checking
 int parsePortNum(int argc, char** argv);
+
+/// string case insensitive compare
+bool NoCaseLess(const std::string &a, const std::string &b);
 
 //// errors
 //void errCheck(int& retVal, const std::string& funcName, int successVal = 0);
@@ -507,7 +525,8 @@ void Server::who(Command cmd) {
         namesVec.emplace_back(client.first);
     }
 
-    std::sort(namesVec.begin(), namesVec.end());
+    //std::sort(namesVec.begin(), namesVec.end());
+    std::sort(namesVec.begin(), namesVec.end(), NoCaseLess );
 
     std::string list = "who T ";
 
@@ -604,4 +623,12 @@ int main(int argc, char* argv[]) {
     //// close
 
     //// --- Repeat  ---
+}
+
+//// =============================== helper Function ================================================
+
+bool NoCaseLess(const std::string &a, const std::string &b)
+{
+    return std::lexicographical_compare( a.begin(),a.end(),
+            b.begin(),b.end(), case_insensitive_less() );
 }
