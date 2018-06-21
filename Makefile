@@ -3,26 +3,37 @@ CXX = g++
 
 INCS=-I.
 CFLAGS = -Wall -std=c++11 -g $(INCS)
-CXXFLAGS = -Wall -pthread -std=c++11 -g $(INCS)
+CXXFLAGS = -Wall -std=c++11 -g $(INCS)
 
 
 TAR = tar
 TARFLAGS = -cvf
-TARNAME = ex3.tar
-TARSRCS = MapReduceFramework.cpp Makefile README
+TARNAME = ex4.tar
+TARSRCS = ${ALL} Makefile README
 
-default: libMapReduceFramework.a
+CLIENT = whatsappClient.cpp whatsappio.h
+SERVER = whatsappServer.cpp whatsappio.h
+IO = whatsappio.cpp whatsappio.h
+EXE = whatsappClient whatsappServer
 
-libMapReduceFramework.a: MapReduceFramework.o
-	ar rcs $@ $^
+default: all
 
-t: main
+all: ${EXE}
 
-main: main.o libMapReduceFramework.a
+whatsappClient: whatsappClient.o whatsappio.o
+
+whatsappServer: whatsappServer.o whatsappio.o
+
+whatsappClient.o: ${CLIENT}
+
+whatsappServer.o: ${SERVER}
+
+whatsappio.o: ${IO}
+
 
 .PHONY : clean
 clean:
-	$(RM) *.o libMapReduceFramework.a main $(TARNAME) *~
+	$(RM) *.o  ${EXE} $(TARNAME) *~
 
 tar:
 	$(TAR) $(TARFLAGS) $(TARNAME) $(TARSRCS)

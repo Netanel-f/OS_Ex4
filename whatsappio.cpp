@@ -120,7 +120,9 @@ void parse_command(const std::string& command, command_type& commandT,
     message.clear();
     clients.clear();
 
-    if (command.empty() || (std::count(command.begin(), command.end(), ' ') == command.length()))
+    if (command.empty() || (std::count(command.begin(), command.end(), ' ') == (unsigned int)
+            command.length
+            ()))
     {
         commandT = INVALID;
         return;
@@ -172,7 +174,7 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
                     std::string& name, std::string& message, std::vector<std::string>& clients){
     // send T/F
     // create_group T/F <group_name>
-    // who T/F <ret_client_name_separated_by_commas_without_spaces>
+    // who T/F <ret_client_name_separated_by_commas_without_spaces> //todo cleanup
     // exit T/F
     // message <sender_name> <message>
     // connect T/F/D
