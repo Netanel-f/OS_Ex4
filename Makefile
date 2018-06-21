@@ -15,6 +15,7 @@ CLIENT = whatsappClient.cpp whatsappio.h
 SERVER = whatsappServer.cpp whatsappio.h
 IO = whatsappio.cpp whatsappio.h
 EXE = whatsappClient whatsappServer
+ALL = ${IO} whatsappClient.cpp whatsappServer.cpp
 
 default: all
 

@@ -640,7 +640,7 @@ int main(int argc, char* argv[]) {
     exit(0);
 }
 
-//// =============================== helper Function ================================================
+//// =============================== helper Function ==============================================
 
 bool NoCaseLess(const std::string &a, const std::string &b)
 {
