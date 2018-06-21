@@ -41,10 +41,10 @@ class ClientObj {
 
 public:
 
-    //// C-tor
+    // C-tor
     ClientObj(const std::string& clientName, unsigned short port, char* server);
 
-    //// client actions
+    // client actions
     void registerAtServer();
     void selectPhase();
     bool forcedExit = false;
@@ -320,8 +320,6 @@ std::string ClientObj::readFromServer() {
     return msg;
 }
 
-//// ===========================   Global Variables ===============================================
-
 //// ============================== Main Function ================================================
 
 /**
@@ -400,7 +398,7 @@ void ClientObj::selectPhase() {
 }
 
 int main(int argc, char* argv[]) {
-    //// --- Setup  ---
+    // --- Setup  ---
     validateMainArgc(argc);
     std::string clientName = parseClientName(argv[1]);
     unsigned short clientPort = parseClientPort(argv[3]);
@@ -410,7 +408,7 @@ int main(int argc, char* argv[]) {
     client.registerAtServer();
 
 
-    //// strating client select phase.
+    // strating client select phase.
     client.selectPhase();
 
     // Termination handling.
@@ -436,7 +434,3 @@ bool isNameValid(std::string* name) {
     }
     return false;
 }
-
-//// ==============================  Helper Functions =============================================
-
-
