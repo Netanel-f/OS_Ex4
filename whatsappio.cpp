@@ -119,11 +119,6 @@ void parse_command(const std::string& command, command_type& commandT,
     message.clear();
     clients.clear();
 
-//    if(command.empty()&& dbg) { // todo J might be bad ? trying without
-//        printf("empty input");  //todo J we have a lot of segfaults originating her - try and
-                                 // todo so try to make segfault safe
-//        return;
-//    }
     if (command.empty() || (std::count(command.begin(), command.end(), ' ') == command.length()))
     {
         commandT = INVALID;
