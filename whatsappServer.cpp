@@ -301,9 +301,9 @@ void Server::handleClientRequest(int sockfd) {
     Command cmd;
 
     // parsing client request
-    cmd.type=INVALID;
-    cmd.name="";
-    cmd.message="";
+    cmd.type = INVALID;
+    cmd.name = "";
+    cmd.message = "";
     cmd.clients.clear();
 
     parse_command(incomingMsg, cmd.type, cmd.name, cmd.message, cmd.clients);
