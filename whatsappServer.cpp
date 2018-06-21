@@ -365,10 +365,6 @@ void Server::registerClient(Command cmd) {
 
 //// DB queries
 
-//bool Server::isClient(std::string& name) {
-//    return ((bool) clients.count(name)); // (count is zero (false) if not there.
-//}
-
 bool Server::isClient(std::string& name) {
     return ((bool) this->clients1.count(name)); // (count is zero (false) if not there.
 }
