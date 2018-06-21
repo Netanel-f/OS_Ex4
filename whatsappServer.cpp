@@ -236,13 +236,12 @@ void Server::selectPhase() {
 bool Server::shouldTerminateServer() {
     std::string serverInput;
     getline(std::cin, serverInput);
-    if (serverInput=="EXIT") {
+    if (serverInput == "EXIT") {
         killAllSocketsAndClients();
         print_exit();
         return true;
     }
     else {
-//        print_invalid_input();    //todo verify that no need to print.
         return false;
     }
 }
@@ -529,8 +528,6 @@ void Server::clientExit(Command cmd) {
     // remove sender from all groups
     std::vector<std::string> toErase;
     for (auto& group : groups1) {
-
-
         group.second.erase(std::remove(group.second.begin(), group.second.end(), cmd.sender),
                            group.second.end());
 
