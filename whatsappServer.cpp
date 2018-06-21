@@ -405,7 +405,7 @@ void Server::createGroup(Command cmd) {
         print_create_group(true, false, cmd.sender, cmd.name);
 
         //report failure to client
-        writeToClient(cmd.senderSockfd, "create_group F");
+        writeToClient(cmd.senderSockfd, "create_group F " + cmd.name);
         return;
     }
 
@@ -423,7 +423,7 @@ void Server::createGroup(Command cmd) {
             print_create_group(true, false, cmd.sender, cmd.name);
 
             //report failure to client
-            writeToClient(cmd.senderSockfd, "create_group F");
+            writeToClient(cmd.senderSockfd, "create_group F " + cmd.name);
             return;
         }
     }
@@ -438,7 +438,7 @@ void Server::createGroup(Command cmd) {
         print_create_group(true, false, cmd.sender, cmd.name);
 
         //report failure to client
-        writeToClient(cmd.senderSockfd, "create_group F");
+        writeToClient(cmd.senderSockfd, "create_group F " + cmd.name);
     }
 
     // add this group to DB

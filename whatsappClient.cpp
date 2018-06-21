@@ -179,7 +179,7 @@ void ClientObj::handleClientRequest(std::string userInput) {
             if (this->validateGroupCreation(&command, &validateCmd)) {
                 writeToServer(validateCmd);
             } else {
-                print_invalid_input();
+                print_create_group(false, false, this->clientName, command.name);
             }
             break;
 
@@ -187,7 +187,7 @@ void ClientObj::handleClientRequest(std::string userInput) {
             if (validateSend(&command)) {
                 writeToServer(command.command);
             } else {
-                print_invalid_input();
+                print_create_group(false, false, this->clientName, command.name);
             }
             break;
 
@@ -294,9 +294,9 @@ std::string ClientObj::readFromServer() {
             bcount += br;
 //            buf += br;
         }
-        if (br < 1) { //todo J bcz read 0 kept happening THIS NEEDS CHANGING FOR DEAD SERVER
+        if (br < 1) {
             print_error("read", errno);
-            return "terminated"; //todo what to do
+            return "terminated";
         }
     }
 //    return(bcount);
