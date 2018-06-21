@@ -187,7 +187,7 @@ void ClientObj::handleClientRequest(std::string userInput) {
             if (validateSend(&command)) {
                 writeToServer(command.command);
             } else {
-                print_create_group(false, false, this->clientName, command.name);
+                print_send(false, false, this->clientName, command.name, command.message);
             }
             break;
 
