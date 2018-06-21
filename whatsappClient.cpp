@@ -377,9 +377,8 @@ int main(int argc, char* argv[]) {
     client.selectPhase();
     bool serverWasTerminated = client.forcedExit;
     client.~ClientObj();
-    print_exit(false, "deaf");
+    if (!serverWasTerminated) { print_exit(false, "deaf"); }
     exit(serverWasTerminated);
-
 }
 
 bool isNameValid(std::string* name) {
