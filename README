@@ -18,5 +18,24 @@ Remarks go here.
 ANSWERS:
 
 Q1:
+            1. You are required to add one more command: “leave_group <group name>” – the client will be
+            removed from the specified group. If the group becomes empty it should be removed (i.e. it will be
+            valid to use <group name> again).
+            a. Which changes are required in the client side in order to support the new command?
+            b. Which changes are required in the server side in order to support the new command?
+
 
 Q2:
+
+            2. Why do we prefer TCP over UDP in this exercise?
+
+
+Q3:
+            Give two examples for applications that use UDP. Why UDP is preferred for them?
+
+Q4:
+
+
+        4. In this exercise, in case of a server crash all the data is lost (we say that the server is a single
+        point of failure). Describe high level design for a system that is able to recover from failures (we
+        allow ​ some​ of the data to be lost).

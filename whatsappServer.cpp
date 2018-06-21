@@ -530,11 +530,31 @@ void Server::who(Command cmd) {
 
 void Server::clientExit(Command cmd) {
 
+    bool dbg=true; //todo remove
+
     // remove sender from all groups
     std::vector<std::string> toErase;
     for (auto group : groups1) {
-        group.second.erase(std::remove(group.second.begin(), group.second.end(), cmd.sender),
-                           group.second.end());
+
+        auto& list = group.second;
+
+        if(dbg){
+            std::cout << "before remove " << cmd.sender << ":\n";
+            for(auto& usr : list ){
+                std::cout << usr << ",";
+            }
+
+        }
+
+        list.erase(std::remove(list.begin(), list.end(), cmd.sender),
+                          list.end());
+
+        if(dbg){
+            std::cout << "after remove " << cmd.sender << ":\n";
+            for(auto& usr : list ){
+                std::cout << usr << ",";
+            }
+        }
         // remember groups to kill
         if(group.second.empty()){
             toErase.push_back(group.first);
@@ -553,7 +573,6 @@ void Server::clientExit(Command cmd) {
     if (close(cmd.senderSockfd) != 0) {
         print_error("close", errno);
     }
-
 
     // remove sender from server (after reported success) and from fd_set
     this->clients1.erase(cmd.sender);

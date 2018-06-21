@@ -1,6 +1,6 @@
 #include "whatsappio.h"
 
-bool dbg = true; //todo remove
+
 
 void print_exit() {
     printf("EXIT command is typed: server is shutting down\n");
@@ -104,6 +104,7 @@ void print_invalid_input() {
 }
 
 void print_error(const std::string& function_name, int error_number) {
+    bool dbg=true; //todo remove
     if(dbg) printf("debug: error %i message is: %s\n", error_number,  strerror(error_number));
     printf("ERROR: %s %d.\n", function_name.c_str(), error_number);
 }
