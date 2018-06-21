@@ -179,7 +179,7 @@ void ClientObj::handleClientRequest(std::string userInput) {
             if (this->validateGroupCreation(&command, &validateCmd)) {
                 writeToServer(validateCmd);
             } else {
-                print_invalid_input();
+                print_create_group(false, false, this->clientName, command.name);
             }
             break;
 
@@ -187,7 +187,7 @@ void ClientObj::handleClientRequest(std::string userInput) {
             if (validateSend(&command)) {
                 writeToServer(command.command);
             } else {
-                print_invalid_input();
+                print_create_group(false, false, this->clientName, command.name);
             }
             break;
 
