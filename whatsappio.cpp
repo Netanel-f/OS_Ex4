@@ -105,8 +105,6 @@ void print_invalid_input() {
 }
 
 void print_error(const std::string& function_name, int error_number) {
-    bool dbg=true; //todo remove
-    if(dbg) printf("debug: error %i message is: %s\n", error_number,  strerror(error_number));
     printf("ERROR: %s %d.\n", function_name.c_str(), error_number);
 }
 
@@ -120,7 +118,9 @@ void parse_command(const std::string& command, command_type& commandT,
     message.clear();
     clients.clear();
 
-    if (command.empty() || (std::count(command.begin(), command.end(), ' ') == command.length()))
+    if (command.empty() || (std::count(command.begin(), command.end(), ' ') == (unsigned int)
+            command.length
+            ()))
     {
         commandT = INVALID;
         return;
@@ -174,12 +174,6 @@ void parse_command(const std::string& command, command_type& commandT,
 
 void parse_response(const std::string& serverResponse, command_type& serverResponseT,
                     std::string& name, std::string& message, std::vector<std::string>& clients){
-    // send T/F
-    // create_group T/F <group_name>
-    // who T/F <ret_client_name_separated_by_commas_without_spaces>
-    // exit T/F
-    // message <sender_name> <message>
-    // connect T/F/D
 
     char sReply[WA_MAX_INPUT];
     const char *s;
@@ -215,7 +209,7 @@ void parse_response(const std::string& serverResponse, command_type& serverRespo
         serverResponseT = WHO;
         s = strtok_r(NULL, " ", &saveptr);
         message = s;
-        while ((s = strtok_r(NULL, ",", &saveptr)) != NULL) {   //todo check last comma
+        while ((s = strtok_r(NULL, ",", &saveptr)) != NULL) {
             clients.emplace_back(s);
         }
     } else if (!strcmp(s, "exit")) {

@@ -8,7 +8,6 @@
 #include <map>
 #include <iostream>
 #include <algorithm>
-#include <errno.h>
 #include "whatsappio.h"
 
 //// ============================   Constants =====================================================
@@ -18,7 +17,7 @@ static const int MAX_QUEUE = 10;
 
 
 // Command struct
-struct Command { //todo make init?
+struct Command {
     command_type type;
     std::string name;
     std::string message;
@@ -44,9 +43,6 @@ typedef std::vector<std::string> GroupMembers1;
 typedef std::map<std::string, GroupMembers1> GroupsDB1;
 
 
-//todo  ===========================   TODOS ===============================================
-
-
 //// ============================  Class Declarations =============================================
 
 /**
@@ -65,7 +61,7 @@ class Server {
     char writeBuf[WA_MAX_INPUT+1];
 
     fd_set clientsfds;
-    fd_set readfds; //Represent a set of file descriptors.
+    fd_set readfds;
 
 public:
 
@@ -106,9 +102,7 @@ private:
 
 
 
-
-
-//// ===============================  Forward Declarations ============================================
+//// ===============================  Forward Declarations ======================================
 
 //// input checking
 int parsePortNum(int argc, char** argv);
@@ -267,8 +261,9 @@ void Server::killAllSocketsAndClients() {
 
     std::string terminateCmd = "terminated";
     for (auto client:this->clients1) {
-        this->writeToClient(client.second, terminateCmd);   // tell clients that server is terminated.
 
+        // tell clients that server is terminated.
+        this->writeToClient(client.second, terminateCmd);
         if (close(client.second) != 0) {  //close sockets
             print_error("close", errno);
         }
@@ -421,11 +416,13 @@ std::string Server::getClientNameById(int sockfd) {
             return client.first;
         }
     }
+    return "none";
 }
 
 
 
 //// request handling
+
 /**
  * Creating group in server by the given command.
  * @param cmd the create_group command details.
@@ -578,7 +575,7 @@ void Server::clientExit(Command cmd) {
     std::vector<std::string> toErase;
     for (auto& group : groups1) {
         group.second.erase(std::remove(group.second.begin(), group.second.end(), cmd.sender),
-                           group.second.end());
+                group.second.end());
 
         // remember groups to kill
         if(group.second.empty()){
@@ -621,7 +618,7 @@ int parsePortNum(int argc, char** argv) {
 
     //// check args
     if (argc!=2) {
-        print_server_usage();  //todo server shouldnt crash upon receiving illegal requests!
+        print_server_usage();
         exit(1);
     }
     int portNumber = atoi(argv[1]);
