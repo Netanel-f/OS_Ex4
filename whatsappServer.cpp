@@ -106,8 +106,7 @@ private:
     //// name legality
     bool isTakenName(std::string& name);
 
-    void killAllSockets();
-    void killServer();
+    void killAllSocketsAndClients();
 
 };
 
@@ -216,11 +215,11 @@ void Server::selectPhase() {
         if (FD_ISSET(STDIN_FILENO, &readfds)) {
             //msg from stdin
             keepLoop = !shouldTerminateServer();
-            continue; // todo J changed from break
+            continue;
         }
 
         else {
-            //will check each client if it’s in readfds /todo what does this mean??
+            //will check each client if it’s in readfds
             //and then receive a message from him
             for (auto client:this->clients1) {
                 if (FD_ISSET(client.second, &readfds)) {
@@ -236,7 +235,7 @@ bool Server::shouldTerminateServer() {
     std::string serverInput;
     getline(std::cin, serverInput);
     if (serverInput=="EXIT") {
-        killAllSockets();
+        killAllSocketsAndClients();
         print_exit();
         return true;
     }
@@ -249,7 +248,7 @@ bool Server::shouldTerminateServer() {
 void Server::writeToClient(int sockfd, const std::string& command) {
 //    char buf[WA_MAX_INPUT + 1];
 //    bzero(buf, WA_MAX_INPUT + 1);
-    strcpy(this->writeBuf, command.c_str()); //todo J maybe n copy
+    strcpy(this->writeBuf, command.c_str());
 
     int bcount = 0; /* counts bytes read */
     int br = 0; /* bytes read this pass */
@@ -264,7 +263,7 @@ void Server::writeToClient(int sockfd, const std::string& command) {
     }
 }
 
-void Server::killAllSockets() {
+void Server::killAllSocketsAndClients() {
 
     std::string terminateCmd = "terminated";
     for (auto client:this->clients1) {
@@ -275,7 +274,7 @@ void Server::killAllSockets() {
             print_error("close", errno);
         }
     }
-    close(welcomeSocket);
+    close(welcomeSocket); //todo added by josh
 
 }
 
@@ -287,18 +286,17 @@ void Server::handleClientRequest(int sockfd) {
 //    char * buf;
 //    bzero(buf, WA_MAX_INPUT + 1);
     while (bcount < WA_MAX_INPUT) { /* loop until full buffer */
-        br = (int)read(sockfd, this->readBuf, (size_t) WA_MAX_INPUT - bcount);
+        br = (int)read(sockfd, this->readBuf, (size_t) WA_MAX_INPUT - bcount); //reading is atounce
         if (br > 0) {
             bcount += br;
 //            buf += br;
         }
-        if (br == -1) { //todo J bcz read 0 kept happening
+        if (br == -1) { //todo J bcz read 0 kept happening - THIS CAUSES INF LOOP ON CLIENT CRASH
             print_error("read", errno);
         }
     }
 
-    std::string incomingMsg = this->readBuf; //todo BUG - this is often empty after connect
-
+    std::string incomingMsg = this->readBuf;
     Command cmd;
 
     cmd.type=INVALID;
@@ -306,7 +304,7 @@ void Server::handleClientRequest(int sockfd) {
     cmd.message="";
     cmd.clients.clear();
 
-    parse_command(incomingMsg, cmd.type, cmd.name, cmd.message, cmd.clients); //todo invalid
+    parse_command(incomingMsg, cmd.type, cmd.name, cmd.message, cmd.clients);
     // input on all
     cmd.sender = getClientNameById(sockfd);
     cmd.senderSockfd = sockfd;
@@ -339,29 +337,6 @@ void Server::handleClientRequest(int sockfd) {
     }
 
 };
-
-//// send/recv
-
-//void Server::prepSize(uint64_t size, Client client) {
-//    uint64_t datalen = size;
-//    ssize_t written = write(client.sockfd, &datalen, sizeof(uint64_t));
-//    if (written!=c.sender.size()) {
-//        print_error("write", errno);
-//    }
-//}
-
-//void Server::strToClient(const std::string& str, const std::string& clientName) {
-//    Client client = clients[clientName];
-//
-//    // send string size
-//    prepSize(str.size(), client);
-//
-//    // send string
-//    ssize_t written = write(client.sockfd, &str, str.size());
-//    if (written!=str.size()) { //todo J is correct error checking?
-//        print_error("write", errno);
-//    }
-//}
 
 
 //// DB modify
@@ -579,7 +554,7 @@ int parsePortNum(int argc, char** argv) {
 
     //// check args
     if (argc!=2) {
-        print_server_usage();  //todo server shouldnt crash upon receiving illegal requests?
+        print_server_usage();  //todo server shouldnt crash upon receiving illegal requests!
         exit(1);
     }
 
@@ -602,7 +577,7 @@ int main(int argc, char* argv[]) {
     //// --- Init  ---
     int portNumber = parsePortNum(argc, argv);
     //// init Server
-    Server server((unsigned short) portNumber);  // todo J is conversion ok? maybe cast inside parse
+    Server server((unsigned short) portNumber);
 
     //// --- Setup  ---
     //// create socket

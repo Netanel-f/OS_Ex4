@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="WhatsappServer" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="9021" PASS_PARENT_ENVS_2="true" PROJECT_NAME="OS_Ex4" TARGET_NAME="whatsappServer" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="OS_Ex4" RUN_TARGET_NAME="whatsappServer">
+  <configuration default="false" name="WhatsappServer" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="9010" PASS_PARENT_ENVS_2="true" PROJECT_NAME="OS_Ex4" TARGET_NAME="whatsappServer" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="OS_Ex4" RUN_TARGET_NAME="whatsappServer">
     <envs />
     <method />
   </configuration>

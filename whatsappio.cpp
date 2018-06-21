@@ -1,5 +1,4 @@
 #include "whatsappio.h"
-#include <cstdio>
 
 bool dbg = true; //todo remove
 
@@ -118,9 +117,10 @@ void parse_command(const std::string& command, command_type& commandT,
     name.clear();
     message.clear();
     clients.clear();
-    
+
 //    if(command.empty()&& dbg) { // todo J might be bad ? trying without
-//        printf("empty input");
+//        printf("empty input");  //todo J we have a lot of segfaults originating her - try and
+                                 // todo so try to make segfault safe
 //        return;
 //    }
 

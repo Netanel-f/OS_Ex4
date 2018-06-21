@@ -145,6 +145,7 @@ bool ClientObj::handleServerReply() {
         }
         else if (sReply.message == "D") {
             print_dup_connection();
+            exit(1);
         }
         else {
             print_fail_connection();
@@ -169,7 +170,7 @@ bool ClientObj::handleServerReply() {
 
 void ClientObj::handleClientRequest(std::string userInput) {
     Command command;
-    command.command = userInput; //todo J was this needed??
+    command.command = userInput;
     parse_command(userInput, command.type, command.name, command.message, command.clients);
     std::string validateCmd;
 
@@ -253,7 +254,7 @@ bool ClientObj::validateSend(Command* command) {
 void ClientObj::writeToServer(const std::string& command) {
 //    char buf[WA_MAX_INPUT + 1];
 //    bzero(buf, WA_MAX_INPUT + 1);
-    strncpy(this->writeBuf, command.c_str(), WA_MAX_INPUT); //todo J changed to n copy to zero-fill
+    strcpy(this->writeBuf, command.c_str());
 
     int bcount = 0; /* counts bytes read */
     int br = 0; /* bytes read this pass */
@@ -285,7 +286,7 @@ std::string ClientObj::readFromServer() {
             bcount += br;
 //            buf += br;
         }
-        if (br == -1) { //todo J bcz read 0 kept happening
+        if (br == -1) { //todo J bcz read 0 kept happening THIS NEEDS CHANGING FOR DEAD SERVER
             print_error("read", errno);
         }
     }
