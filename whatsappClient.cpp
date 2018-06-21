@@ -176,11 +176,19 @@ void ClientObj::handleClientRequest(std::string userInput) {
 
     switch (command.type) {
         case CREATE_GROUP:
-            if (this->validateGroupCreation(&command, &validateCmd)) { writeToServer(validateCmd); }
+            if (this->validateGroupCreation(&command, &validateCmd)) {
+                writeToServer(validateCmd);
+            } else {
+                print_invalid_input();
+            }
             break;
 
         case SEND:
-            if (validateSend(&command)) { writeToServer(command.command); }
+            if (validateSend(&command)) {
+                writeToServer(command.command);
+            } else {
+                print_invalid_input();
+            }
             break;
 
         case WHO:writeToServer(command.command);
