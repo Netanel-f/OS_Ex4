@@ -554,7 +554,7 @@ void Server::clientExit(Command cmd) {
 }
 
 bool Server::isTakenName(std::string& name) {
-    // ensure alphanumeric only and name not taken.
+    // ensure  name not taken.
     return (isClient(name) || isGroup(name));
 }
 
