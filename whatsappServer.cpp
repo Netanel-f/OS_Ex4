@@ -137,6 +137,10 @@ Server::Server(unsigned short portNumber) {
     sa.sin_port = htons(portNumber);
 
     welcomeSocket = socket(AF_INET, SOCK_STREAM, 0);
+    int enable = 1;
+    if (setsockopt(welcomeSocket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
+        print_error("setsockopt", errno);
+    }
 
     if (welcomeSocket < 0) { print_error("socket", errno); }
 
@@ -243,6 +247,7 @@ void Server::writeToClient(int sockfd, const std::string& command) {
 }
 
 void Server::killAllSockets() {
+
     std::string terminateCmd = "terminated";
     for (auto client:this->clients1) {
         // tell clients that server is terminated.
@@ -252,6 +257,7 @@ void Server::killAllSockets() {
             print_error("close", errno);
         }
     }
+    close(welcomeSocket);
 
 }
 
@@ -524,8 +530,6 @@ void Server::clientExit(Command cmd) {
     }
 
 
-
-
     // send success to client
     writeToClient(cmd.senderSockfd, "exit T ");
 
@@ -541,9 +545,6 @@ void Server::clientExit(Command cmd) {
 
     //print success to server
     print_exit(true, cmd.sender);
-
-    //todo remove user from fd.set
-
 }
 
 bool Server::isTakenName(std::string& name) {
