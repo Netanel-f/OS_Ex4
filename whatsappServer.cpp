@@ -295,6 +295,7 @@ void Server::handleClientRequest(int sockfd) {
         }
         if (br < 1) { //todo J bcz read 0 kept happening - THIS CAUSES INF LOOP ON CLIENT CRASH
             print_error("read", errno);
+            //todo kill client if error
             return; //todo what to do
         }
     }
@@ -413,8 +414,17 @@ void Server::createGroup(Command cmd) {
 
     // add each client
     for (std::string strName : cmd.clients) {
+        // if exists:
         if (isClient(strName)) {
             members.push_back(strName);
+            //otherwise client does not exist
+        }else{
+            //print failure on server
+            print_create_group(true, false, cmd.sender, cmd.name);
+
+            //report failure to client
+            writeToClient(cmd.senderSockfd, "create_group F");
+            return;
         }
     }
 
@@ -525,7 +535,6 @@ void Server::clientExit(Command cmd) {
         group.second.erase(std::remove(group.second.begin(), group.second.end(), cmd.sender),
                            group.second.end());
     }
-
 
     // send success to client
     writeToClient(cmd.senderSockfd, "exit T ");
