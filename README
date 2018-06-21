@@ -4,9 +4,10 @@ EX: 3
 
 FILES:
 
-file.h        -- Description.
-file.cpp      -- Description.
-
+whatsappio.h          -- WhatsApp I/O header file.
+whatsappio.cpp        -- WhatsApp I/O code.
+whatsappServer.cpp    -- WhatsApp Server.
+whatsappClient.cpp    -- WhatsApp Client.
 Makefile        -- An awesome makefile.
 README          -- This Pulitzer-worthy file.
 
