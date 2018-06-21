@@ -119,10 +119,10 @@ void parse_command(const std::string& command, command_type& commandT,
     message.clear();
     clients.clear();
     
-    if(command.empty()&& dbg) { // todo J might be bad ?
-        printf("empty input");
-        return;
-    }
+//    if(command.empty()&& dbg) { // todo J might be bad ? trying without
+//        printf("empty input");
+//        return;
+//    }
 
     strcpy(c, command.c_str());
     s = strtok_r(c, " ", &saveptr);
